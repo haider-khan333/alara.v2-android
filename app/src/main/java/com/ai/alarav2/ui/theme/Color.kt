@@ -11,6 +11,9 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 //--------------------Alara V2 Colors--------------------
-val AlaraCharcoal = Color(0xFF2D2D2D)
+val AlaraPrimary = Color(0xFFF8F8F8)
+val AlaraPrimaryDark = Color(0xFFA6A6A6)
+val AlaraChipGrayBorder = Color(0x99D3D3D3)
+val AlaraRating = Color(0xABFFA534)
 
 

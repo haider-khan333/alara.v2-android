@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun AlaraIconButton(
     modifier: Modifier = Modifier,
+    iconModifier: Modifier = Modifier,
     enabled: Boolean = true,
     iconTint: Color = MaterialTheme.colorScheme.surfaceVariant,
     onClick: () -> Unit,
@@ -38,13 +39,19 @@ fun AlaraIconButton(
     ) {
         if (imageVector != null) {
             Icon(
+                modifier = iconModifier,
                 imageVector = imageVector,
                 contentDescription = contentDescription,
                 tint = iconTint
             )
         }
         if (painter != null) {
-            Icon(painter = painter, contentDescription = contentDescription, tint = iconTint)
+            Icon(
+                painter = painter,
+                modifier = iconModifier,
+                contentDescription = contentDescription,
+                tint = iconTint
+            )
         }
     }
 }
