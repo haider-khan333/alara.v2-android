@@ -14,6 +14,8 @@ val Pink40 = Color(0xFF7D5260)
 val AlaraPrimary = Color(0xFFF8F8F8)
 val AlaraPrimaryDark = Color(0xFFA6A6A6)
 val AlaraChipGrayBorder = Color(0x99D3D3D3)
+val AlaraWhite = Color(0xD7FFFFFF)
+val AlaraDarkGray = Color(0xD7383838)
 val AlaraRating = Color(0xABFFA534)
 
 

@@ -25,12 +25,6 @@ fun AlaraIconButton(
     painter: Painter?,
     colors: IconButtonColors? = null,
 ) {
-    val brandIconColor = if (isSystemInDarkTheme()) {
-        Color(0xFFFFB74D) // Lighter orange for dark backgrounds
-    } else {
-        Color(0xFFE65100) // Darker orange for light backgrounds
-    }
-
     IconButton(
         enabled = enabled,
         onClick = onClick,

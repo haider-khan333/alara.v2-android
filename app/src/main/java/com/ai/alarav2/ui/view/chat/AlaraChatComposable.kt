@@ -1,16 +1,6 @@
 package com.ai.alarav2.ui.view.chat
 
-import android.util.Log
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.Easing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.calculateTargetValue
-import androidx.compose.animation.core.exponentialDecay
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
@@ -29,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -55,44 +45,47 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.alarav2.R
+import com.ai.alarav2.data.models.ui.AlaraChatUiModel
+import com.ai.alarav2.ui.theme.AlaraDarkGray
+import com.ai.alarav2.ui.theme.AlaraWhite
 import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
 import com.ai.alarav2.ui.view.components.AlaraHeader
 import com.ai.alarav2.ui.view.components.AlaraText
 import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
-import com.ai.alarav2.ui.view.components.customOverscroll
-import kotlinx.coroutines.launch
-import kotlin.math.log
+import customOverscroll
 import kotlin.math.roundToInt
-import kotlin.math.sign
 
 @Composable
 fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     var chatMessage by remember { mutableStateOf("") }
+    val messages = remember { mutableStateListOf<AlaraChatUiModel>() }
+    val listState = rememberLazyListState()
+
+
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
     Scaffold(topBar = {
-        AlaraHeader(content = {
+        AlaraHeader(containerColor = MaterialTheme.colorScheme.background, content = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -172,9 +165,20 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
             value = chatMessage,
             onValueChange = { chatMessage = it },
             onClick = {},
-            onSend = {})
+            onSend = {
+                messages.add(AlaraChatUiModel(chatMessage, true))
+                chatMessage = ""
+                messages.add(
+                    AlaraChatUiModel(
+                        "Hello there how are you. i am fine a n how are you?",
+                        false
+                    )
+                )
+
+
+            })
     }, content = { contentPadding ->
-        val listState = rememberLazyListState()
+
         var animatedOverscrollAmount by remember { mutableFloatStateOf(0f) }
 
 
@@ -188,15 +192,20 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                 .offset { IntOffset(0, animatedOverscrollAmount.roundToInt()) }
         ) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-
                     .padding(contentPadding)
                     .padding(5.dp)
             ) {
-                item {
-                    AlaraUserMessage(message = "Hello there how are you. i am fine a n how are you?")
-                    AlaraBotMessage(message = "I ma great and i am alara bot and i am here assist you with any type of your needds")
+                items(messages.size) {
+                    if (messages[it].isUser)
+                        AlaraUserMessage(message = messages[it].message)
+                    else
+                        AlaraBotMessage(message = messages[it].message)
+
+                    // Add a little space after every message
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -209,6 +218,7 @@ enum class AlaraClickType {
     CONNECTIONS,
     MIC
 }
+
 
 @Composable
 fun AlaraTextBar(
@@ -256,10 +266,11 @@ fun AlaraTextBar(
                     .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
             ) {
 
+
                 val size = 35.dp
                 val imgModifier = Modifier
                     .background(
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = AlaraWhite,
                         shape = RoundedCornerShape(50),
                     )
                     .size(size)
@@ -270,7 +281,8 @@ fun AlaraTextBar(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
                     painter = null,
-                    modifier = imgModifier
+                    modifier = imgModifier,
+                    iconTint = AlaraDarkGray
                 )
                 Spacer(modifier = Modifier.width(10.dp))
 
@@ -282,7 +294,10 @@ fun AlaraTextBar(
                     imageVector = Icons.Rounded.PrivateConnectivity,
                     contentDescription = null,
                     painter = null,
-                    modifier = imgModifier
+                    modifier = imgModifier,
+                    iconTint = AlaraDarkGray
+
+
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -297,6 +312,7 @@ fun AlaraTextBar(
                         contentDescription = null,
                         painter = null,
                         modifier = imgModifier,
+                        iconTint = AlaraDarkGray
                     )
                 }
 
@@ -312,10 +328,12 @@ fun AlaraTextBar(
                     painter = null,
                     modifier = imgModifier,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.onBackground,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceDim
+                        containerColor = Color.Black,
+                        disabledContainerColor = AlaraDarkGray.copy(alpha = 0.5f),
+                    ),
+                    iconTint = Color.White
 
-                    )
+
                 )
             }
         }

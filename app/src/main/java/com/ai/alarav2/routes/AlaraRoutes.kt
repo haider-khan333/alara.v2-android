@@ -1,4 +1,4 @@
-package com.ai.alarav2.ui.routes
+package com.ai.alarav2.routes
 
 import kotlinx.serialization.Serializable
 
