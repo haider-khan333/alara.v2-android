@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -191,6 +192,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                 )
                 .offset { IntOffset(0, animatedOverscrollAmount.roundToInt()) }
         ) {
+
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -198,6 +200,24 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                     .padding(contentPadding)
                     .padding(5.dp)
             ) {
+
+                if (messages.isEmpty()) {
+
+                    item {
+                        Box(
+                            modifier = Modifier.fillParentMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AlaraInitMessage(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp),
+                                text = "How can I help you today?"
+                            )
+                        }
+                    }
+
+                }
                 items(messages.size) {
                     if (messages[it].isUser)
                         AlaraUserMessage(message = messages[it].message)
@@ -212,6 +232,16 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     })
 }
 
+@Composable
+fun AlaraInitMessage(modifier: Modifier = Modifier, text: String) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AlaraText(text = text, fontSize = 22.sp, fontFamily = FontFamily.Serif)
+    }
+
+}
 
 enum class AlaraClickType {
     ADD,
