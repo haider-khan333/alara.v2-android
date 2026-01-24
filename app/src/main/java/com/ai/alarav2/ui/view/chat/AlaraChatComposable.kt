@@ -25,6 +25,10 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ThumbDownAlt
 import androidx.compose.material.icons.outlined.ThumbUpAlt
+import androidx.compose.material.icons.rounded.AddPhotoAlternate
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.BrowseGallery
+import androidx.compose.material.icons.rounded.CameraEnhance
 import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Card
@@ -48,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -242,7 +247,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                                 modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
                             )
 
-                            Divider(modifier = Modifier.padding(horizontal = 10.dp))
+                            Divider(modifier = Modifier.padding(horizontal = 10.dp), color = MaterialTheme.colorScheme.onBackground)
 
                         }
                         items(models.size) {
@@ -263,6 +268,23 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                     }
 
 
+                }
+
+                AlaraClickType.ADD -> {
+                    val uploadOptions = chatViewModel.uploadOptions.value
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(uploadOptions.size) {
+                            AlaraFileSelection(
+                                cardColor = AlaraColors.SheetColors,
+                                icon = uploadOptions[it].icon,
+                                text = uploadOptions[it].text,
+                                onClick = { option ->
+
+
+                                }
+                            )
+                        }
+                    }
                 }
 
                 else -> {}
@@ -320,6 +342,42 @@ fun AlaraModelSelection(
                 )
             }
 
+        }
+    }
+
+}
+
+@Composable
+fun AlaraFileSelection(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    text: String,
+    onClick: (String) -> Unit = {},
+    cardColor: Color = Color.Unspecified
+) {
+    Card(
+        onClick = {
+            onClick(text)
+        },
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = cardColor,
+
+            ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
+    ) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 20.dp, horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Icon(imageVector = icon, null)
+            Spacer(modifier = Modifier.width(10.dp))
+            AlaraText(text = text)
         }
     }
 

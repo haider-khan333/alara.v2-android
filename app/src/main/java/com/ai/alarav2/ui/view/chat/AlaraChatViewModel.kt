@@ -1,10 +1,16 @@
 package com.ai.alarav2.ui.view.chat
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AddPhotoAlternate
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.CameraEnhance
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.data.models.ui.AlaraModelsUiModel
+import com.ai.alarav2.data.models.ui.AlaraUploadUiModel
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -56,10 +62,20 @@ class AlaraChatViewModel @Inject constructor() : ViewModel() {
     )
     private val _selectedModel: MutableStateFlow<String> =
         MutableStateFlow(_models.value.first().heading)
+
+
     val selectedModel: StateFlow<String> = _selectedModel
 
-
     val models: StateFlow<List<AlaraModelsUiModel>> = _models
+
+    private val _uploadOptions: MutableStateFlow<List<AlaraUploadUiModel>> = MutableStateFlow(
+        listOf(
+            AlaraUploadUiModel(text = "Camera", icon = Icons.Rounded.CameraEnhance),
+            AlaraUploadUiModel(text = "Gallery", icon = Icons.Rounded.AddPhotoAlternate),
+            AlaraUploadUiModel(text = "Files", icon = Icons.Rounded.AttachFile),
+        )
+    )
+    val uploadOptions: StateFlow<List<AlaraUploadUiModel>> = _uploadOptions
 
 
     fun showSheet() {
