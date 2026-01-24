@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.alarav2.R
 import com.ai.alarav2.ui.theme.AlaraChipGrayBorder
+import com.ai.alarav2.ui.theme.AlaraColors
 import com.ai.alarav2.ui.theme.AlaraRating
 import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
 import com.ai.alarav2.ui.view.components.AlaraHeader
@@ -84,7 +86,10 @@ fun AlaraDashboardComposable(
         Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
             Column {
                 AlaraHeader(containerColor = Color.Transparent, isCentered = true, content = {
-                    AlaraText(text = stringResource(R.string.app_name))
+                    AlaraText(
+                        text = stringResource(R.string.app_name),
+                        fontFamily = FontFamily.Serif, fontSize = 18.sp
+                    )
                 }, navigationIcon = {
                     AlaraIconButton(
                         onClick = { /*TODO*/ },
@@ -219,18 +224,7 @@ fun AlaraDashboardComposable(
 @Composable
 fun AlaraMessage(modifier: Modifier = Modifier) {
 
-    val imgBgColor = if (isSystemInDarkTheme()) {
-        AlaraChipGrayBorder.copy(alpha = 0.1f)
-    } else {
-        AlaraChipGrayBorder
-    }
 
-
-    val subTextBgColor = if (isSystemInDarkTheme()) {
-        AlaraChipGrayBorder
-    } else {
-        Color.Black.copy(alpha = 0.5f)
-    }
     Card(
         onClick = {
 
@@ -250,7 +244,7 @@ fun AlaraMessage(modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     .background(
-                        color = imgBgColor, shape = RoundedCornerShape(50)
+                        color = AlaraColors.ImgBg, shape = RoundedCornerShape(50)
                     )
                     .size(40.dp)
             ) {
@@ -289,7 +283,7 @@ fun AlaraMessage(modifier: Modifier = Modifier) {
                         tint = AlaraRating
                     )
                     Spacer(modifier = Modifier.width(5.dp))
-                    AlaraText(text = day.toString(), color = subTextBgColor)
+                    AlaraText(text = day.toString(), color = AlaraColors.TextSecondary)
 
                 }
                 Spacer(modifier = Modifier.height(5.dp))
@@ -298,7 +292,7 @@ fun AlaraMessage(modifier: Modifier = Modifier) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     text = "Hellow there how can i help you today? I am here to your needs. let me know how can i help you today",
-                    color = subTextBgColor,
+                    color = AlaraColors.TextSecondary,
                     fontSize = 14.sp
 
                 )

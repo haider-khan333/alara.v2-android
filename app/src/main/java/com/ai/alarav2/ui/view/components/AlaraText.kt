@@ -38,7 +38,7 @@ fun AlaraText(
     letterSpacing: TextUnit = TextUnit.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     textAlign: TextAlign = TextAlign.Start,
-    fontFamily: FontFamily = FontFamily.Default
+    fontFamily: FontFamily = FontFamily.Serif
 
 ) {
 

@@ -1,0 +1,13 @@
+package com.ai.alarav2.data.models.ui
+
+data class AlaraChatUiModels(
+    val message: String,
+    val isUser: Boolean,
+)
+
+data class AlaraModelsUiModel(
+    val heading: String,
+    val subHeading: String,
+    var isSelected: Boolean
+)
+
