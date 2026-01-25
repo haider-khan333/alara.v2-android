@@ -17,13 +17,16 @@ import javax.inject.Singleton
 class AlaraNetworkModule {
 
     private val baseUrl = "https://alara-agents-staging.fintra.ai/app/api/v1/"
+    private val token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OTcwZjc0YjM3MjczZjhjOTA4ZDhkYmYiLCJvcmdhbml6YXRpb24iOiI2OTQ4ZmZiMzNkNWI3ZGNhOTI1NDUyMzMiLCJwZXJtaXNzaW9uIjoiNjk0OTE2NzYzZDViN2RjYTkyNTQ2YWFiIiwiZmlyc3ROYW1lIjoiSGFpZGVyIiwidGVhbXMiOltdLCJsYXN0TmFtZSI6IktoYW4iLCJlbWFpbCI6ImhhaWRlci5raGFuQGlzc20uYWkiLCJpYXQiOjE3NjkzNjQxNTMsImV4cCI6MTc2OTM2Nzc1M30.AKM545bnt3hMKCoSJy6zl-J-R5TurrdCQ33sxVRInCA"
 
     @Provides
     @Singleton
     fun provideAuthInterceptor(): Interceptor = Interceptor { chain ->
         val req = chain.request().newBuilder().addHeader(
             "Authorization",
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OTcwZjc0YjM3MjczZjhjOTA4ZDhkYmYiLCJvcmdhbml6YXRpb24iOiI2OTQ4ZmZiMzNkNWI3ZGNhOTI1NDUyMzMiLCJwZXJtaXNzaW9uIjoiNjk0OTE2NzYzZDViN2RjYTkyNTQ2YWFiIiwiZmlyc3ROYW1lIjoiSGFpZGVyIiwidGVhbXMiOltdLCJsYXN0TmFtZSI6IktoYW4iLCJlbWFpbCI6ImhhaWRlci5raGFuQGlzc20uYWkiLCJpYXQiOjE3NjkzNTQ2MjQsImV4cCI6MTc2OTM1ODIyNH0.ujeL3rq2q_k_cijgdnVUY7IVL9amf2BgcDrPG9zSLEg")
+            "Bearer $token"
+        )
             .build()
 
         chain.proceed(req)
@@ -35,6 +38,9 @@ class AlaraNetworkModule {
     fun provideHttpClient(authInterceptor: Interceptor):
             OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
+        .callTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     @Provides

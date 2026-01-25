@@ -175,6 +175,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                 chatViewModel.showSheet()
             }, onSend = {
                 chatViewModel.sendMessage(message = chatMessage)
+                chatMessage = ""
             }, onStop = {
                 // on stop the api call and show a message to user that the message has been stopped
             },
