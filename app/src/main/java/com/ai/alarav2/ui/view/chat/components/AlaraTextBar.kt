@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Square
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.MicNone
@@ -26,7 +27,9 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.ai.alarav2.R
 import com.ai.alarav2.ui.theme.AlaraDarkGray
 import com.ai.alarav2.ui.theme.AlaraWhite
 import com.ai.alarav2.ui.view.components.AlaraText
@@ -45,6 +48,8 @@ fun AlaraTextBar(
     modifier: Modifier = Modifier, value: String,
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
+    onStop: () -> Unit = {},
+    isLoading: Boolean = false,
     onClick: (AlaraClickType) -> Unit
 ) {
     Card(
@@ -138,23 +143,45 @@ fun AlaraTextBar(
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                AlaraIconButton(
-                    enabled = !value.isEmpty(),
-                    onClick = {
-                        onSend()
-                    },
-                    imageVector = Icons.Rounded.ArrowUpward,
-                    contentDescription = null,
-                    painter = null,
-                    modifier = imgModifier,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = Color.Black,
-                        disabledContainerColor = AlaraDarkGray.copy(alpha = 0.5f),
-                    ),
-                    iconTint = Color.White
+                if (isLoading) {
+                    AlaraIconButton(
+                        onClick = {
+                            onStop()
+                        },
+                        imageVector = null,
+                        contentDescription = null,
+                        painter = painterResource(R.drawable.ic_stop),
+                        modifier = imgModifier,
+                        iconModifier = Modifier.padding(6.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black,
+                            disabledContainerColor = AlaraDarkGray.copy(alpha = 0.5f),
+                        ),
+                        iconTint = Color.White
 
 
-                )
+                    )
+
+                } else {
+                    AlaraIconButton(
+                        enabled = !value.isEmpty(),
+                        onClick = {
+                            onSend()
+                        },
+                        imageVector = Icons.Rounded.ArrowUpward,
+                        contentDescription = null,
+                        painter = null,
+                        modifier = imgModifier,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black,
+                            disabledContainerColor = AlaraDarkGray.copy(alpha = 0.5f),
+                        ),
+                        iconTint = Color.White
+
+
+                    )
+
+                }
 
 
             }

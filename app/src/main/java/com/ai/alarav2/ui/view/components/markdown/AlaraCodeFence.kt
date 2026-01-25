@@ -33,6 +33,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -156,7 +157,8 @@ fun MarkdownHighlightedCode(
         color = backgroundCodeColor,
         shape = RoundedCornerShape(0.dp),
         modifier = Modifier
-            .fillMaxWidth().padding(top = 10.dp)
+            .fillMaxWidth()
+            .padding(top = 10.dp)
     ) {
         MarkdownBasicText(
             buildAnnotatedString {
@@ -184,7 +186,7 @@ fun MarkdownHighlightedCode(
             modifier = Modifier
                 .padding(codeBlockPadding),
             style = style,
-            softWrap = true
+            softWrap = true,
         )
     }
 }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -167,12 +168,18 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
 
         })
     }, bottomBar = {
-        AlaraTextBar(value = chatMessage, onValueChange = { chatMessage = it }, onClick = { type ->
-            chatViewModel.setClickType(type)
-            chatViewModel.showSheet()
-        }, onSend = {
-            chatViewModel.sendMessage(message = chatMessage)
-        })
+        AlaraTextBar(
+            value = chatMessage,
+            onValueChange = { chatMessage = it }, onClick = { type ->
+                chatViewModel.setClickType(type)
+                chatViewModel.showSheet()
+            }, onSend = {
+                chatViewModel.sendMessage(message = chatMessage)
+            }, onStop = {
+                // on stop the api call and show a message to user that the message has been stopped
+            },
+            isLoading = chatState is AlaraChatUiState.Loading
+        )
     }, content = { contentPadding ->
 
         var animatedOverscrollAmount by remember { mutableFloatStateOf(0f) }
@@ -218,14 +225,14 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                 }
                 if (chatState is AlaraChatUiState.Loading) {
                     item {
-                        AlaraBotMessage(message = "Thinking...")
+                        AlaraBotMessage(isLoading = true)
                     }
 
                 }
 
                 if (chatState is AlaraChatUiState.Error) {
                     item {
-                        AlaraBotMessage(message = chatState.message)
+                        AlaraBotMessage(message = chatState.message, isLoading = false)
                     }
 
                 }
@@ -422,7 +429,9 @@ fun AlaraUserMessage(message: String) {
                 .padding(vertical = 10.dp, horizontal = 18.dp)
         ) {
             AlaraText(
-                text = message, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                text = message,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                softWrap = true
             )
         }
 
@@ -432,7 +441,9 @@ fun AlaraUserMessage(message: String) {
 
 @Composable
 fun AlaraBotMessage(
-    modifier: Modifier = Modifier, message: String
+    modifier: Modifier = Modifier,
+    message: String? = "",
+    isLoading: Boolean = false
 ) {
     Column(modifier = modifier) {
         // icon
@@ -440,71 +451,88 @@ fun AlaraBotMessage(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            Icon(
-                painterResource(R.mipmap.ic_launcher_foreground),
-                contentDescription = null,
-                Modifier.size(40.dp)
-            )
-            AlaraText(text = stringResource(R.string.app_name))
+            Box(modifier = Modifier.padding(end = 10.dp)) {
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.DarkGray
+                    )
+                }
+                Icon(
+                    painterResource(R.mipmap.ic_launcher_foreground),
+                    contentDescription = null,
+                    Modifier.size(40.dp)
+                )
+            }
+
+            if (!isLoading) {
+                AlaraText(text = stringResource(R.string.app_name))
+
+            } else {
+                AlaraText(text = "Thinking...")
+            }
         }
 
         Column(modifier = modifier.padding(start = 10.dp)) {
-            AlaraMarkdownText(markdown = message)
-//            AlaraTypewriterText(text = message)
+            AlaraMarkdownText(markdown = message!!)
         }
 
-        val iconModifier = Modifier
-            .background(
-                color = MaterialTheme.colorScheme.background,
-                shape = RoundedCornerShape(50),
 
+        if (!isLoading) {
+            val iconModifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.background,
+                    shape = RoundedCornerShape(50),
+
+                    )
+                .size(50.dp)
+                .padding(5.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 0.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AlaraIconButton(
+                    onClick = {},
+                    modifier = iconModifier,
+                    iconTint = MaterialTheme.colorScheme.onBackground,
+                    imageVector = Icons.Rounded.CopyAll,
+                    contentDescription = null,
+                    painter = null
                 )
-            .size(50.dp)
-            .padding(5.dp)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 0.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AlaraIconButton(
-                onClick = {},
-                modifier = iconModifier,
-                iconTint = MaterialTheme.colorScheme.onBackground,
-                imageVector = Icons.Rounded.CopyAll,
-                contentDescription = null,
-                painter = null
-            )
 
-            AlaraIconButton(
-                onClick = {},
-                modifier = iconModifier,
-                iconTint = MaterialTheme.colorScheme.onBackground,
-                imageVector = Icons.Outlined.ThumbUpAlt,
-                contentDescription = null,
-                painter = null
-            )
+                AlaraIconButton(
+                    onClick = {},
+                    modifier = iconModifier,
+                    iconTint = MaterialTheme.colorScheme.onBackground,
+                    imageVector = Icons.Outlined.ThumbUpAlt,
+                    contentDescription = null,
+                    painter = null
+                )
 
 
-            AlaraIconButton(
-                onClick = {},
-                modifier = iconModifier,
-                iconTint = MaterialTheme.colorScheme.onBackground,
-                imageVector = Icons.Outlined.ThumbDownAlt,
-                contentDescription = null,
-                painter = null
-            )
+                AlaraIconButton(
+                    onClick = {},
+                    modifier = iconModifier,
+                    iconTint = MaterialTheme.colorScheme.onBackground,
+                    imageVector = Icons.Outlined.ThumbDownAlt,
+                    contentDescription = null,
+                    painter = null
+                )
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AlaraText(text = "AlaraV2 can make mistakes, so double-check it", fontSize = 12.sp)
+
+            }
         }
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AlaraText(text = "AlaraV2 can make mistakes, so double-check it", fontSize = 12.sp)
-
-        }
 
     }
 }
@@ -522,7 +550,12 @@ fun AlaraChatScreenPreview() {
     } else {
         WindowWidthSizeClass.Expanded
     }
-    AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
+    Column(Modifier.padding(top = 10.dp)) {
+        AlaraBotMessage(
+            message = "Hellow tere how are you", isLoading = true
+        )
+    }
+//    AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
 //    AlaraModelSelection(
 //        modifier = Modifier.padding(top = 20.dp),
 //        heading = "AutoGPT",
