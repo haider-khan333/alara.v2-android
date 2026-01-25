@@ -1,8 +1,10 @@
 package com.ai.alarav2.data.models.ui
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import java.util.UUID
 
 data class AlaraChatUiModels(
+    val id: String = UUID.randomUUID().toString(),
     val message: String,
     val isUser: Boolean,
 )

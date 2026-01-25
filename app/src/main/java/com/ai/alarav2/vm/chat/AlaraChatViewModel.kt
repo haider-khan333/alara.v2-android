@@ -138,8 +138,6 @@ class AlaraChatViewModel @Inject constructor(
                 is AlaraChatResult.Failure -> {
                     when (result.error.code) {
                         401 -> {
-                            // unauthorized
-                            // api call for refresh token
                             _chatState.value = AlaraChatUiState.Error("Unauthorized")
 
                         }
@@ -152,11 +150,12 @@ class AlaraChatViewModel @Inject constructor(
                             _chatState.value = AlaraChatUiState.Error(result.error.toUiMessage())
                         }
                     }
-                    _chatState.value = AlaraChatUiState.Error(result.error.toUiMessage())
                 }
 
                 is AlaraChatResult.Stream -> {
                     var isFirstChunk = true
+                    var assembled = ""
+                    var lastToken = ""
 
                     result.lines.collect { raw ->
                         val line = raw.trim()
@@ -174,25 +173,34 @@ class AlaraChatViewModel @Inject constructor(
                             val token = data.optString("message", "")
                             val type = data.optString("type", "")
 
+                            if (type.equals("end", ignoreCase = true)) {
+                                _chatState.value = AlaraChatUiState.Success("Completed")
+                                return@collect
+                            }
+
+                            if (token == lastToken) return@collect
+                            lastToken = token
+                            val newAssembled = when {
+                                token.startsWith(assembled) -> token
+                                else -> assembled + token
+                            }
+                            if (newAssembled == assembled) return@collect
+                            assembled = newAssembled
+
                             if (isFirstChunk) {
                                 _messages.update {
                                     it + AlaraChatUiModels(
-                                        message = token,
+                                        message = assembled,
                                         isUser = false
                                     )
                                 }
                                 _chatState.value = AlaraChatUiState.Success("Streaming...")
                                 isFirstChunk = false
                             } else {
-                                if (type.equals("end", ignoreCase = true)) {
-                                    _chatState.value = AlaraChatUiState.Success("Completed")
-                                    return@collect
-                                }
                                 _messages.update { current ->
                                     val list = current.toMutableList()
                                     val last = list.lastIndex
-                                    list[last] =
-                                        list[last].copy(message = list[last].message + token)
+                                    list[last] = list[last].copy(message = assembled)
                                     list
                                 }
                             }
@@ -201,6 +209,7 @@ class AlaraChatViewModel @Inject constructor(
                         }
                     }
                 }
+
             }
         }
     }

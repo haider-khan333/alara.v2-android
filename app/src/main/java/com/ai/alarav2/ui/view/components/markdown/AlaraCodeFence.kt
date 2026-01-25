@@ -187,6 +187,7 @@ fun MarkdownHighlightedCode(
                 .padding(codeBlockPadding),
             style = style,
             softWrap = true,
+            fontFamily = FontFamily.Serif
         )
     }
 }

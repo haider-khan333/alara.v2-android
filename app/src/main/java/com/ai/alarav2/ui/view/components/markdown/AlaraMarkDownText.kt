@@ -34,12 +34,10 @@ fun AlaraMarkdownText(
         ),
 
         components = markdownComponents(
-            codeFence = {
-
-
+            codeFence = { fence ->
                 AlaraCodeFence(
-                    content = markdown,
-                    node = it.node,
+                    content = fence.content,
+                    node = fence.node,
                 )
             }
         ),

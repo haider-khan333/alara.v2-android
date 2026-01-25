@@ -1,5 +1,6 @@
 package com.ai.alarav2.repository
 
+import android.util.Log
 import com.ai.alarav2.data.models.req.AlaraChatRequest
 import com.ai.alarav2.data.remote.AlaraChatApi
 import com.ai.alarav2.vm.chat.AlaraChatError
@@ -42,11 +43,14 @@ class AlaraChatImpl @Inject constructor(
     }
 
     private fun sseLines(body: ResponseBody): Flow<String> = flow {
+        Log.d("TAG", "sseLines: streaming started")
         body.use { responseBody ->
             val reader = responseBody.charStream().buffered()
 
             while (true) {
                 val line = reader.readLine() ?: break
+                Log.d("SSE", "line=${line.take(120)}")
+
                 emit(line)
             }
         }

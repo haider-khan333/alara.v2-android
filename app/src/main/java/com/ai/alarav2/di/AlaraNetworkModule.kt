@@ -18,8 +18,7 @@ class AlaraNetworkModule {
 
     private val baseUrl = "https://alara-agents-staging.fintra.ai/app/api/v1/"
     private val token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OTcwZjc0YjM3MjczZjhjOTA4ZDhkYmYiLCJvcmdhbml6YXRpb24iOiI2OTQ4ZmZiMzNkNWI3ZGNhOTI1NDUyMzMiLCJwZXJtaXNzaW9uIjoiNjk0OTE2NzYzZDViN2RjYTkyNTQ2YWFiIiwiZmlyc3ROYW1lIjoiSGFpZGVyIiwidGVhbXMiOltdLCJsYXN0TmFtZSI6IktoYW4iLCJlbWFpbCI6ImhhaWRlci5raGFuQGlzc20uYWkiLCJpYXQiOjE3NjkzNjQxNTMsImV4cCI6MTc2OTM2Nzc1M30.AKM545bnt3hMKCoSJy6zl-J-R5TurrdCQ33sxVRInCA"
-
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OTcwZjc0YjM3MjczZjhjOTA4ZDhkYmYiLCJvcmdhbml6YXRpb24iOiI2OTQ4ZmZiMzNkNWI3ZGNhOTI1NDUyMzMiLCJwZXJtaXNzaW9uIjoiNjk0OTE2NzYzZDViN2RjYTkyNTQ2YWFiIiwiZmlyc3ROYW1lIjoiSGFpZGVyIiwidGVhbXMiOltdLCJsYXN0TmFtZSI6IktoYW4iLCJlbWFpbCI6ImhhaWRlci5raGFuQGlzc20uYWkiLCJpYXQiOjE3NjkzNzc3NzEsImV4cCI6MTc2OTM4MTM3MX0.WEfuMfKtNPbwWON8Cznc0ncUihoZCXOypibQm_WvhGg"
     @Provides
     @Singleton
     fun provideAuthInterceptor(): Interceptor = Interceptor { chain ->

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,6 +39,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -64,9 +66,10 @@ import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
 import com.ai.alarav2.ui.view.chat.components.AlaraTextBar
 import com.ai.alarav2.ui.view.components.AlaraAnimatedBottomSheet
 import com.ai.alarav2.ui.view.components.AlaraHeader
-import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.ui.view.components.AlaraText
+import com.ai.alarav2.ui.view.components.StreamingFadeText
 import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
+import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.vm.chat.AlaraChatUiState
 import com.ai.alarav2.vm.chat.AlaraChatViewModel
 import customOverscroll
@@ -83,13 +86,25 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     val sheetVisible = chatViewModel.showSheet.collectAsState().value
     val selectedModel = chatViewModel.selectedModel.collectAsState().value
     val chatState = chatViewModel.chatState.collectAsState().value
+    val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
 
-
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
-        }
+    val isAtBottom by remember {
+        derivedStateOf { !listState.canScrollForward }
     }
+    val canAutoScroll by remember {
+        derivedStateOf { isAtBottom && !listState.isScrollInProgress }
+    }
+    val lastMsgText = messages.lastOrNull()?.message.orEmpty()
+
+    LaunchedEffect(messages.size, lastMsgText) {
+        if (messages.isEmpty()) return@LaunchedEffect
+        if (!canAutoScroll) return@LaunchedEffect
+
+        // no need for awaitFrame usually
+        listState.scrollToItem(messages.size - 1)
+    }
+
+
 
     Scaffold(topBar = {
         AlaraHeader(containerColor = MaterialTheme.colorScheme.background, content = {
@@ -190,7 +205,9 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
 
                 .customOverscroll(
                     listState, onNewOverscrollAmount = { animatedOverscrollAmount = it })
-                .offset { IntOffset(0, animatedOverscrollAmount.roundToInt()) }) {
+                .offset { IntOffset(0, animatedOverscrollAmount.roundToInt()) }
+        )
+        {
 
             LazyColumn(
                 state = listState,
@@ -217,12 +234,18 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                     }
 
                 }
-                items(messages.size) {
-                    if (messages[it].isUser) AlaraUserMessage(message = messages[it].message)
-                    else AlaraBotMessage(message = messages[it].message)
+                items(
+                    items = messages,
+                    key = { it.id }
+                ) { msg ->
+                    if (msg.isUser) AlaraUserMessage(
+                        message =
+                            msg.message
+                    )
+                    else AlaraBotMessage(message = msg.message)
 
                     // Add a little space after every message
-                    Spacer(modifier = Modifier.height(16.dp))
+//                    Spacer(modifier = Modifier.height(16.dp))
                 }
                 if (chatState is AlaraChatUiState.Loading) {
                     item {
@@ -444,7 +467,8 @@ fun AlaraUserMessage(message: String) {
 fun AlaraBotMessage(
     modifier: Modifier = Modifier,
     message: String? = "",
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    isScrolling: Boolean = false
 ) {
     Column(modifier = modifier) {
         // icon
@@ -475,7 +499,13 @@ fun AlaraBotMessage(
         }
 
         Column(modifier = modifier.padding(start = 10.dp)) {
-            AlaraMarkdownText(markdown = message!!)
+            if(isScrolling){
+                AlaraText(text = message!!)
+            }else{
+                AlaraMarkdownText(markdown = message!!)
+            }
+
+//            AlaraText(text=message!!)
         }
 
 
