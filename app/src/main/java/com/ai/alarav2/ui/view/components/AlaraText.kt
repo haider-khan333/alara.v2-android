@@ -38,7 +38,8 @@ fun AlaraText(
     letterSpacing: TextUnit = TextUnit.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     textAlign: TextAlign = TextAlign.Start,
-    fontFamily: FontFamily = FontFamily.Serif
+    fontFamily: FontFamily = FontFamily.Serif,
+    softWrap: Boolean = false
 
 ) {
 
@@ -54,7 +55,8 @@ fun AlaraText(
         letterSpacing = letterSpacing,
         fontSize = fontSize,
         textAlign = textAlign,
-        fontFamily = fontFamily
+        fontFamily = fontFamily,
+        softWrap = softWrap
     )
 }
 

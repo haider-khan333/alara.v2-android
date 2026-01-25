@@ -18,7 +18,7 @@ fun AlaraRouter(
     NavHost(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
-        startDestination = AlaraRoutes.AlaraDashboard,
+        startDestination = AlaraRoutes.AlaraChat,
 
         ) {
         composable<AlaraRoutes.AlaraChat> {

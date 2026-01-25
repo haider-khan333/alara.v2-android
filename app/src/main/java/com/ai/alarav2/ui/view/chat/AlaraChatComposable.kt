@@ -1,7 +1,6 @@
 package com.ai.alarav2.ui.view.chat
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,10 +23,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ThumbDownAlt
 import androidx.compose.material.icons.outlined.ThumbUpAlt
-import androidx.compose.material.icons.rounded.AddPhotoAlternate
-import androidx.compose.material.icons.rounded.AttachFile
-import androidx.compose.material.icons.rounded.BrowseGallery
-import androidx.compose.material.icons.rounded.CameraEnhance
 import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Card
@@ -63,16 +57,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ai.alarav2.R
-import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.ui.theme.AlaraColors
-import com.ai.alarav2.ui.theme.AlaraDarkGray
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
 import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
 import com.ai.alarav2.ui.view.chat.components.AlaraTextBar
 import com.ai.alarav2.ui.view.components.AlaraAnimatedBottomSheet
 import com.ai.alarav2.ui.view.components.AlaraHeader
+import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.ui.view.components.AlaraText
 import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
+import com.ai.alarav2.vm.chat.AlaraChatUiState
+import com.ai.alarav2.vm.chat.AlaraChatViewModel
 import customOverscroll
 import kotlin.math.roundToInt
 
@@ -86,6 +81,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     val messages = chatViewModel.messages.collectAsState().value
     val sheetVisible = chatViewModel.showSheet.collectAsState().value
     val selectedModel = chatViewModel.selectedModel.collectAsState().value
+    val chatState = chatViewModel.chatState.collectAsState().value
 
 
     LaunchedEffect(messages.size) {
@@ -175,12 +171,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
             chatViewModel.setClickType(type)
             chatViewModel.showSheet()
         }, onSend = {
-            chatViewModel.addMessage(AlaraChatUiModels(chatMessage, true))
-            chatViewModel.addMessage(
-                AlaraChatUiModels(
-                    "Hello there how are you. i am fine a n how are you?", false
-                )
-            )
+            chatViewModel.sendMessage(message = chatMessage)
         })
     }, content = { contentPadding ->
 
@@ -225,6 +216,20 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                     // Add a little space after every message
                     Spacer(modifier = Modifier.height(16.dp))
                 }
+                if (chatState is AlaraChatUiState.Loading) {
+                    item {
+                        AlaraBotMessage(message = "Thinking...")
+                    }
+
+                }
+
+                if (chatState is AlaraChatUiState.Error) {
+                    item {
+                        AlaraBotMessage(message = chatState.message)
+                    }
+
+                }
+
             }
         }
 
@@ -247,7 +252,10 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                                 modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
                             )
 
-                            Divider(modifier = Modifier.padding(horizontal = 10.dp), color = MaterialTheme.colorScheme.onBackground)
+                            Divider(
+                                modifier = Modifier.padding(horizontal = 10.dp),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
 
                         }
                         items(models.size) {
@@ -265,6 +273,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                                 }
                             )
                         }
+
                     }
 
 
@@ -440,7 +449,8 @@ fun AlaraBotMessage(
         }
 
         Column(modifier = modifier.padding(start = 10.dp)) {
-            AlaraText(text = message)
+            AlaraMarkdownText(markdown = message)
+//            AlaraTypewriterText(text = message)
         }
 
         val iconModifier = Modifier
@@ -503,20 +513,20 @@ fun AlaraBotMessage(
 @Composable
 @Preview(showSystemUi = true)
 fun AlaraChatScreenPreview() {
-//    val configuration = LocalConfiguration.current
-//    val screenWidth = configuration.screenWidthDp.dp
-//
-//    // Simple logic to mock the size class for Preview purposes
-//    val mockSizeClass = if (screenWidth < 600.dp) {
-//        WindowWidthSizeClass.Compact
-//    } else {
-//        WindowWidthSizeClass.Expanded
-//    }
-//    AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
-    AlaraModelSelection(
-        modifier = Modifier.padding(top = 20.dp),
-        heading = "AutoGPT",
-        subHeading = "Autonomous agent that breaks goals into sub-tasks using GPT-4.",
-        isSelected = true
-    )
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    // Simple logic to mock the size class for Preview purposes
+    val mockSizeClass = if (screenWidth < 600.dp) {
+        WindowWidthSizeClass.Compact
+    } else {
+        WindowWidthSizeClass.Expanded
+    }
+    AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
+//    AlaraModelSelection(
+//        modifier = Modifier.padding(top = 20.dp),
+//        heading = "AutoGPT",
+//        subHeading = "Autonomous agent that breaks goals into sub-tasks using GPT-4.",
+//        isSelected = true
+//    )
 }

@@ -73,5 +73,13 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+
+    implementation("com.mikepenz:multiplatform-markdown-renderer-android:0.27.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.27.0")
+
+    implementation("com.mikepenz:multiplatform-markdown-renderer-code:0.27.0")
+
 
 }
