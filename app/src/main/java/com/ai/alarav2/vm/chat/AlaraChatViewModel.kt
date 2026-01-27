@@ -130,7 +130,7 @@ class AlaraChatViewModel @Inject constructor(
             val req = AlaraChatRequest(
                 agentId = "6970f8ed7f1e9a37b6507b90",
                 message = message,
-                sessionId = "6970f74b37273f8c908d8dbf-1769292512795",
+                sessionId = "6970f74b37273f8c908d8dbf-1769451831615",
                 stream = true
             )
 
@@ -194,7 +194,7 @@ class AlaraChatViewModel @Inject constructor(
                                         isUser = false
                                     )
                                 }
-                                _chatState.value = AlaraChatUiState.Success("Streaming...")
+                                _chatState.value = AlaraChatUiState.Streaming
                                 isFirstChunk = false
                             } else {
                                 _messages.update { current ->
@@ -204,6 +204,7 @@ class AlaraChatViewModel @Inject constructor(
                                     list
                                 }
                             }
+                            _chatState.value = AlaraChatUiState.Success("Completed")
                         } catch (e: Exception) {
                             _chatState.value = AlaraChatUiState.Error("Stream parse error")
                         }
@@ -216,3 +217,4 @@ class AlaraChatViewModel @Inject constructor(
 
 
 }
+

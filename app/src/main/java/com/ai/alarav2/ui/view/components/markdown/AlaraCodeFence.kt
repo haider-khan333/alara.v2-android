@@ -46,6 +46,7 @@ import com.mikepenz.markdown.compose.LocalMarkdownPadding
 import com.mikepenz.markdown.compose.LocalMarkdownTypography
 import com.mikepenz.markdown.compose.elements.MarkdownCodeBackground
 import com.mikepenz.markdown.compose.elements.MarkdownCodeFence
+import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeFence
 import com.mikepenz.markdown.compose.elements.material.MarkdownBasicText
 import dev.snipme.highlights.Highlights
 import dev.snipme.highlights.model.BoldHighlight
@@ -120,87 +121,5 @@ fun AlaraCodeFence(
     }
 }
 
-
-@Composable
-fun MarkdownHighlightedCodeFence(
-    content: String,
-    node: ASTNode,
-    highlights: Highlights.Builder = Highlights.Builder()
-) {
-    MarkdownCodeFence(content, node) { code, language ->
-        MarkdownHighlightedCode(code, language, highlights)
-    }
-}
-
-@Composable
-fun MarkdownHighlightedCode(
-    code: String,
-    language: String?,
-    highlights: Highlights.Builder = Highlights.Builder(),
-    style: TextStyle = LocalMarkdownTypography.current.code,
-) {
-    val backgroundCodeColor = LocalMarkdownColors.current.codeBackground
-    LocalMarkdownDimens.current.codeBackgroundCornerSize
-    val codeBlockPadding = LocalMarkdownPadding.current.codeBlock
-    val syntaxLanguage = remember(language) { language?.let { SyntaxLanguage.getByName(it) } }
-
-    val codeHighlights by remembering(code) {
-        derivedStateOf {
-            highlights
-                .code(code)
-                .let { if (syntaxLanguage != null) it.language(syntaxLanguage) else it }
-                .build()
-        }
-    }
-
-    MarkdownCodeBackground(
-        color = backgroundCodeColor,
-        shape = RoundedCornerShape(0.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp)
-    ) {
-        MarkdownBasicText(
-            buildAnnotatedString {
-                text(codeHighlights.getCode())
-                codeHighlights.getHighlights()
-                    .filterIsInstance<ColorHighlight>()
-                    .forEach {
-                        addStyle(
-                            SpanStyle(color = Color(it.rgb).copy(alpha = 1f)),
-                            start = it.location.start,
-                            end = it.location.end,
-                        )
-                    }
-                codeHighlights.getHighlights()
-                    .filterIsInstance<BoldHighlight>()
-                    .forEach {
-                        addStyle(
-                            SpanStyle(fontWeight = FontWeight.Bold),
-                            start = it.location.start,
-                            end = it.location.end,
-                        )
-                    }
-            },
-            color = LocalMarkdownColors.current.codeText,
-            modifier = Modifier
-                .padding(codeBlockPadding),
-            style = style,
-            softWrap = true,
-            fontFamily = FontFamily.Serif
-        )
-    }
-}
-
-@Composable
-internal inline fun <T, K> remembering(
-    key1: K,
-    crossinline calculation: @DisallowComposableCalls (K) -> T,
-): T = remember(key1) { calculation(key1) }
-
-internal fun AnnotatedString.Builder.text(text: String, style: SpanStyle = SpanStyle()) =
-    withStyle(style = style) {
-        append(text)
-    }
 
 

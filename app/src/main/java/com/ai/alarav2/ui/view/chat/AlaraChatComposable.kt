@@ -45,6 +45,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,12 +68,15 @@ import com.ai.alarav2.ui.view.chat.components.AlaraTextBar
 import com.ai.alarav2.ui.view.components.AlaraAnimatedBottomSheet
 import com.ai.alarav2.ui.view.components.AlaraHeader
 import com.ai.alarav2.ui.view.components.AlaraText
-import com.ai.alarav2.ui.view.components.StreamingFadeText
 import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
 import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.vm.chat.AlaraChatUiState
 import com.ai.alarav2.vm.chat.AlaraChatViewModel
+import com.mikepenz.markdown.model.rememberMarkdownState
 import customOverscroll
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlin.math.roundToInt
 
 
@@ -86,7 +90,8 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     val sheetVisible = chatViewModel.showSheet.collectAsState().value
     val selectedModel = chatViewModel.selectedModel.collectAsState().value
     val chatState = chatViewModel.chatState.collectAsState().value
-    val isScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
+    val isStreaming = chatState is AlaraChatUiState.Streaming
+    val lastBotId = messages.lastOrNull { !it.isUser }?.id
 
     val isAtBottom by remember {
         derivedStateOf { !listState.canScrollForward }
@@ -96,12 +101,24 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     }
     val lastMsgText = messages.lastOrNull()?.message.orEmpty()
 
-    LaunchedEffect(messages.size, lastMsgText) {
+    LaunchedEffect(messages.size) {
         if (messages.isEmpty()) return@LaunchedEffect
         if (!canAutoScroll) return@LaunchedEffect
-
-        // no need for awaitFrame usually
         listState.scrollToItem(messages.size - 1)
+    }
+
+    LaunchedEffect(isStreaming) {
+        if (!isStreaming) return@LaunchedEffect
+
+        snapshotFlow { messages.lastOrNull()?.message }
+            .filter { it != null }
+            .distinctUntilChanged()
+            .debounce(60)
+            .collect {
+                if (canAutoScroll && messages.isNotEmpty()) {
+                    listState.scrollToItem(messages.size - 1)
+                }
+            }
     }
 
 
@@ -242,7 +259,10 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                         message =
                             msg.message
                     )
-                    else AlaraBotMessage(message = msg.message)
+                    else AlaraBotMessage(
+                        message = msg.message,
+                        isStreaming = isStreaming && msg.id == lastBotId
+                    )
 
                     // Add a little space after every message
 //                    Spacer(modifier = Modifier.height(16.dp))
@@ -311,7 +331,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                 }
 
                 AlaraClickType.ADD -> {
-                    val uploadOptions = chatViewModel.uploadOptions.value
+                    val uploadOptions = chatViewModel.uploadOptions.collectAsState().value
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         items(uploadOptions.size) {
                             AlaraFileSelection(
@@ -468,7 +488,7 @@ fun AlaraBotMessage(
     modifier: Modifier = Modifier,
     message: String? = "",
     isLoading: Boolean = false,
-    isScrolling: Boolean = false
+    isStreaming: Boolean = false
 ) {
     Column(modifier = modifier) {
         // icon
@@ -499,13 +519,13 @@ fun AlaraBotMessage(
         }
 
         Column(modifier = modifier.padding(start = 10.dp)) {
-            if(isScrolling){
+            if (isStreaming) {
                 AlaraText(text = message!!)
-            }else{
-                AlaraMarkdownText(markdown = message!!)
+            } else {
+                val state = rememberMarkdownState(message!!)
+                AlaraMarkdownText(state = state)
             }
 
-//            AlaraText(text=message!!)
         }
 
 
@@ -581,12 +601,12 @@ fun AlaraChatScreenPreview() {
     } else {
         WindowWidthSizeClass.Expanded
     }
-    Column(Modifier.padding(top = 10.dp)) {
-        AlaraBotMessage(
-            message = "Hellow tere how are you", isLoading = true
-        )
-    }
-//    AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
+//    Column(Modifier.padding(top = 10.dp)) {
+//        AlaraBotMessage(
+//            message = "Hellow tere how are you", isLoading = true
+//        )
+//    }
+    AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
 //    AlaraModelSelection(
 //        modifier = Modifier.padding(top = 20.dp),
 //        heading = "AutoGPT",
