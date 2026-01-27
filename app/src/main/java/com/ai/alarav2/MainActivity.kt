@@ -54,11 +54,15 @@ class MainActivity : ComponentActivity() {
                         AlaraDrawerContainer(
                             isDrawerOpened = isDrawerOpened,
                             onSwipe = { isDrawerOpened = it }
-                        ) {
-                            AlaraDrawer(
-                                selectedItem = AlaraRoutes.Dashboard,
-                                onItemClick = { route -> navController.navigate(route) }
-                            )
+                        , drawerContent = {
+                                AlaraDrawer(
+                                    selectedItem = AlaraRoutes.Dashboard,
+                                    onItemClick = { route ->
+                                        isDrawerOpened = false // Close on click
+                                        navController.navigate(route)
+                                    }
+                                )
+                            }) {
 
                             AlaraRouter(
                                 navController = navController,
