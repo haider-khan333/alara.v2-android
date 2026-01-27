@@ -13,12 +13,15 @@ import com.ai.alarav2.data.models.ui.AlaraModelsUiModel
 import com.ai.alarav2.data.models.ui.AlaraUploadUiModel
 import com.ai.alarav2.repository.AlaraChatRepo
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
+import com.mikepenz.markdown.model.MarkdownState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.parser.MarkdownParser
 import org.json.JSONObject
 import javax.inject.Inject
 
@@ -26,10 +29,11 @@ import javax.inject.Inject
 class AlaraChatViewModel @Inject constructor(
     private val chatRepo: AlaraChatRepo
 ) : ViewModel() {
+
     private val _showSheet = MutableStateFlow(false)
     val showSheet: StateFlow<Boolean> = _showSheet
 
-    private val _messages = MutableStateFlow<List<AlaraChatUiModels>>(mutableListOf())
+    private val _messages = MutableStateFlow<List<AlaraChatUiModels>>(emptyList())
     val messages: StateFlow<List<AlaraChatUiModels>> = _messages
 
     private val _clickType = MutableStateFlow<AlaraClickType?>(null)
@@ -38,9 +42,10 @@ class AlaraChatViewModel @Inject constructor(
     private val _chatState = MutableStateFlow<AlaraChatUiState>(AlaraChatUiState.Idle)
     val chatState: StateFlow<AlaraChatUiState> = _chatState
 
+    private var streamingJob: Job? = null
 
-    private val _models = MutableStateFlow<List<AlaraModelsUiModel>>(
-        mutableListOf(
+    private val _models = MutableStateFlow(
+        listOf(
             AlaraModelsUiModel(
                 heading = "AutoGPT",
                 subHeading = "Autonomous agent that breaks goals into sub-tasks using GPT-4.",
@@ -68,24 +73,19 @@ class AlaraChatViewModel @Inject constructor(
             )
         )
     )
-    private val _selectedModel: MutableStateFlow<String> =
-        MutableStateFlow(_models.value.first().heading)
 
-
+    private val _selectedModel = MutableStateFlow(_models.value.first().heading)
     val selectedModel: StateFlow<String> = _selectedModel
-
     val models: StateFlow<List<AlaraModelsUiModel>> = _models
 
-    private val _uploadOptions: MutableStateFlow<List<AlaraUploadUiModel>> = MutableStateFlow(
+    private val _uploadOptions = MutableStateFlow(
         listOf(
             AlaraUploadUiModel(text = "Camera", icon = Icons.Rounded.CameraEnhance),
             AlaraUploadUiModel(text = "Gallery", icon = Icons.Rounded.AddPhotoAlternate),
             AlaraUploadUiModel(text = "Files", icon = Icons.Rounded.AttachFile),
         )
     )
-
     val uploadOptions: StateFlow<List<AlaraUploadUiModel>> = _uploadOptions
-
 
     fun showSheet() {
         _showSheet.value = true
@@ -95,11 +95,6 @@ class AlaraChatViewModel @Inject constructor(
         _showSheet.value = false
     }
 
-    fun addMessage(message: AlaraChatUiModels) {
-        _messages.value += message
-
-    }
-
     fun setClickType(type: AlaraClickType) {
         _clickType.value = type
     }
@@ -107,13 +102,8 @@ class AlaraChatViewModel @Inject constructor(
     fun updateSelection(index: Int) {
         _models.update { currentList ->
             currentList.mapIndexed { i, model ->
-                if (i == index) {
-                    model.copy(isSelected = !model.isSelected)
-                } else {
-                    model.copy(isSelected = false)
-                }
+                model.copy(isSelected = i == index)
             }
-
         }
     }
 
@@ -121,100 +111,125 @@ class AlaraChatViewModel @Inject constructor(
         _selectedModel.value = model
     }
 
+    fun stopStreaming() {
+        streamingJob?.cancel()
+        streamingJob = null
+        _chatState.value = AlaraChatUiState.Success("Stopped")
+    }
 
     fun sendMessage(message: String) {
-        viewModelScope.launch {
-            _messages.update { it + AlaraChatUiModels(message = message, isUser = true) }
-            _chatState.value = AlaraChatUiState.Loading
+        streamingJob?.cancel()
 
-            val req = AlaraChatRequest(
-                agentId = "6970f8ed7f1e9a37b6507b90",
-                message = message,
-                sessionId = "6970f74b37273f8c908d8dbf-1769451831615",
-                stream = true
-            )
+        streamingJob = viewModelScope.launch {
+            try {
+                _messages.update { it + AlaraChatUiModels(message = message, isUser = true) }
+                _chatState.value = AlaraChatUiState.Loading
 
-            when (val result = chatRepo.sendMessage(req)) {
-                is AlaraChatResult.Failure -> {
-                    when (result.error.code) {
-                        401 -> {
-                            _chatState.value = AlaraChatUiState.Error("Unauthorized")
+                val req = AlaraChatRequest(
+                    agentId = "6970f8ed7f1e9a37b6507b90",
+                    message = message,
+                    sessionId = "6970f74b37273f8c908d8dbf-1769451831615",
+                    stream = true
+                )
 
-                        }
-
-                        in 500..509 -> {
-                            _chatState.value = AlaraChatUiState.Error("Server Error")
-                        }
-
-                        else -> {
-                            _chatState.value = AlaraChatUiState.Error(result.error.toUiMessage())
-                        }
+                when (val result = chatRepo.sendMessage(req)) {
+                    is AlaraChatResult.Failure -> {
+                        handleError(result.error)
+                    }
+                    is AlaraChatResult.Stream -> {
+                        handleStreamingResponse(result)
                     }
                 }
-
-                is AlaraChatResult.Stream -> {
-                    var isFirstChunk = true
-                    var assembled = ""
-                    var lastToken = ""
-
-                    result.lines.collect { raw ->
-                        val line = raw.trim()
-                        if (line.isEmpty() || !line.startsWith("data:")) return@collect
-
-                        val jsonString = line.removePrefix("data:").trim()
-                        if (jsonString == "[DONE]") {
-                            _chatState.value = AlaraChatUiState.Success("Completed")
-                            return@collect
-                        }
-
-                        try {
-                            val root = JSONObject(jsonString)
-                            val data = root.getJSONObject("data")
-                            val token = data.optString("message", "")
-                            val type = data.optString("type", "")
-
-                            if (type.equals("end", ignoreCase = true)) {
-                                _chatState.value = AlaraChatUiState.Success("Completed")
-                                return@collect
-                            }
-
-                            if (token == lastToken) return@collect
-                            lastToken = token
-                            val newAssembled = when {
-                                token.startsWith(assembled) -> token
-                                else -> assembled + token
-                            }
-                            if (newAssembled == assembled) return@collect
-                            assembled = newAssembled
-
-                            if (isFirstChunk) {
-                                _messages.update {
-                                    it + AlaraChatUiModels(
-                                        message = assembled,
-                                        isUser = false
-                                    )
-                                }
-                                _chatState.value = AlaraChatUiState.Streaming
-                                isFirstChunk = false
-                            } else {
-                                _messages.update { current ->
-                                    val list = current.toMutableList()
-                                    val last = list.lastIndex
-                                    list[last] = list[last].copy(message = assembled)
-                                    list
-                                }
-                            }
-                            _chatState.value = AlaraChatUiState.Success("Completed")
-                        } catch (e: Exception) {
-                            _chatState.value = AlaraChatUiState.Error("Stream parse error")
-                        }
-                    }
-                }
-
+            } catch (e: Exception) {
+                Log.e("AlaraChatVM", "Error sending message", e)
+                _chatState.value = AlaraChatUiState.Error(e.message ?: "Unknown error occurred")
             }
         }
     }
 
+    private suspend fun handleStreamingResponse(result: AlaraChatResult.Stream) {
+        var isFirstChunk = true
+        var assembled = ""
+        var lastToken = ""
 
+        result.lines.collect { raw ->
+            val line = raw.trim()
+            if (line.isEmpty() || !line.startsWith("data:")) return@collect
+
+            val jsonString = line.removePrefix("data:").trim()
+            if (jsonString == "[DONE]") {
+                _chatState.value = AlaraChatUiState.Success("Completed")
+                return@collect
+            }
+
+            try {
+                val root = JSONObject(jsonString)
+                val data = root.getJSONObject("data")
+                val token = data.optString("message", "")
+                val type = data.optString("type", "")
+
+                if (type.equals("end", ignoreCase = true)) {
+                    _chatState.value = AlaraChatUiState.Success("Completed")
+                    return@collect
+                }
+
+                // Skip duplicate tokens
+                if (token == lastToken) return@collect
+                lastToken = token
+
+                // Handle incremental vs full message
+                val newAssembled = when {
+                    token.startsWith(assembled) -> token
+                    else -> assembled + token
+                }
+
+                // Skip if no change
+                if (newAssembled == assembled) return@collect
+                assembled = newAssembled
+
+                if (isFirstChunk) {
+                    _messages.update {
+                        it + AlaraChatUiModels(message = assembled, isUser = false)
+                    }
+                    _chatState.value = AlaraChatUiState.Streaming
+                    isFirstChunk = false
+                } else {
+                    _messages.update { current ->
+                        val list = current.toMutableList()
+                        val lastIndex = list.lastIndex
+                        if (lastIndex >= 0 && !list[lastIndex].isUser) {
+                            list[lastIndex] = list[lastIndex].copy(message = assembled)
+                        }
+                        list
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AlaraChatVM", "Stream parse error", e)
+                _chatState.value = AlaraChatUiState.Error("Stream parse error")
+            }
+        }
+
+        if (_chatState.value is AlaraChatUiState.Streaming) {
+            _chatState.value = AlaraChatUiState.Success("Completed")
+        }
+    }
+
+
+    private fun handleError(error: AlaraChatError) {
+        val errorMessage = when (error.code) {
+            401 -> "Unauthorized"
+            in 500..509 -> "Server Error"
+            else -> error.toUiMessage()
+        }
+
+        _chatState.value = AlaraChatUiState.Error(errorMessage)
+        _messages.update {
+            it + AlaraChatUiModels(message = errorMessage, isUser = false)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        streamingJob?.cancel()
+    }
 }
-

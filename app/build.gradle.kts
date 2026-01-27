@@ -89,10 +89,12 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
 
-    implementation("com.mikepenz:multiplatform-markdown-renderer-android:0.33.0")
-    implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.33.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-android:0.39.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.39.0")
 
-    implementation("com.mikepenz:multiplatform-markdown-renderer-code:0.33.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-code:0.39.0")
+
+    implementation("com.github.jeziellago:compose-markdown:0.5.8")
 
 
 }

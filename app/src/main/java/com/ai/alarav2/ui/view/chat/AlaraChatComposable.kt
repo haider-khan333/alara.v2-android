@@ -1,5 +1,6 @@
 package com.ai.alarav2.ui.view.chat
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,13 +56,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import com.ai.alarav2.R
+import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.ui.theme.AlaraColors
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
 import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
@@ -72,11 +77,21 @@ import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
 import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.vm.chat.AlaraChatUiState
 import com.ai.alarav2.vm.chat.AlaraChatViewModel
+import com.mikepenz.markdown.compose.components.MarkdownComponents
+import com.mikepenz.markdown.compose.components.markdownComponents
+import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeFence
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
+import com.mikepenz.markdown.model.MarkdownColors
+import com.mikepenz.markdown.model.MarkdownTypography
+import com.mikepenz.markdown.model.State
 import com.mikepenz.markdown.model.rememberMarkdownState
 import customOverscroll
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlin.math.log
 import kotlin.math.roundToInt
 
 
@@ -99,259 +114,292 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     val canAutoScroll by remember {
         derivedStateOf { isAtBottom && !listState.isScrollInProgress }
     }
-    val lastMsgText = messages.lastOrNull()?.message.orEmpty()
 
+    // Auto-scroll for new messages
     LaunchedEffect(messages.size) {
         if (messages.isEmpty()) return@LaunchedEffect
         if (!canAutoScroll) return@LaunchedEffect
-        listState.scrollToItem(messages.size - 1)
+        listState.animateScrollToItem(messages.size - 1)
     }
 
+    // Smooth auto-scroll during streaming with optimized debounce
     LaunchedEffect(isStreaming) {
         if (!isStreaming) return@LaunchedEffect
 
         snapshotFlow { messages.lastOrNull()?.message }
             .filter { it != null }
             .distinctUntilChanged()
-            .debounce(60)
+            .debounce(100) // Increased debounce for smoother scrolling
             .collect {
                 if (canAutoScroll && messages.isNotEmpty()) {
-                    listState.scrollToItem(messages.size - 1)
+                    listState.animateScrollToItem(messages.size - 1)
                 }
             }
     }
 
 
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val codeBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
 
-    Scaffold(topBar = {
-        AlaraHeader(containerColor = MaterialTheme.colorScheme.background, content = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                IconButton(onClick = {
+    val alaraTypography = markdownTypography(
+        text = TextStyle(fontFamily = FontFamily.Serif, fontSize = 16.sp, color = textColor),
+        h1 = TextStyle(fontFamily = FontFamily.Serif, fontSize = 22.sp, color = textColor),
+        code = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp, color = textColor)
+    )
 
-                }, Modifier.size(30.dp)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                        contentDescription = null
-                    )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
+    val alaraColors = markdownColor(
+        text = textColor,
+        dividerColor = Color.Gray.copy(alpha = 0.5f),
+        codeBackground = codeBackground
+    )
 
-                ) {
+    // Initialize the components (Highlighter) ONLY ONCE
+    val alaraComponents = remember {
+        markdownComponents(
+            codeFence = { fence ->
+                MarkdownHighlightedCodeFence(
+                    content = fence.content,
+                    node = fence.node
+                )
+            },
+            codeBlock = {
+                MarkdownHighlightedCodeFence(
+                    content = it.content,
+                    node = it.node,
+                    style = it.typography.code
+                )
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            AlaraHeader(
+                containerColor = MaterialTheme.colorScheme.background,
+                content = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickableWithOpaqueText {
-
-                                chatViewModel.setClickType(AlaraClickType.MODELS)
-                                chatViewModel.showSheet()
-                            }
-                            .padding(
-                                horizontal = 4.dp, vertical = 2.dp
-                            )) {
-                        AlaraText(
-                            text = selectedModel,
-                            fontSize = 16.sp,
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Icon(
-                            imageVector = Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-        }, actions = {
-            val size = Modifier.size(30.dp)
-            IconButton(onClick = {}, modifier = size) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_alara_add_profile),
-                    contentDescription = null,
-                    Modifier.padding(5.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = {
-
-                },
-                modifier = size,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_alara_share),
-                    contentDescription = null,
-                    Modifier.padding(5.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(onClick = {}, modifier = size) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_alara_settings),
-                    contentDescription = null,
-                    Modifier.padding(5.dp)
-                )
-            }
-
-        })
-    }, bottomBar = {
-        AlaraTextBar(
-            value = chatMessage,
-            onValueChange = { chatMessage = it }, onClick = { type ->
-                chatViewModel.setClickType(type)
-                chatViewModel.showSheet()
-            }, onSend = {
-                chatViewModel.sendMessage(message = chatMessage)
-                chatMessage = ""
-            }, onStop = {
-                // on stop the api call and show a message to user that the message has been stopped
-            },
-            isLoading = chatState is AlaraChatUiState.Loading
-        )
-    }, content = { contentPadding ->
-
-        var animatedOverscrollAmount by remember { mutableFloatStateOf(0f) }
-
-        Box(
-            modifier = Modifier
-
-                .customOverscroll(
-                    listState, onNewOverscrollAmount = { animatedOverscrollAmount = it })
-                .offset { IntOffset(0, animatedOverscrollAmount.roundToInt()) }
-        )
-        {
-
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding)
-                    .padding(5.dp)
-            ) {
-
-                if (messages.isEmpty()) {
-
-                    item {
-                        Box(
-                            modifier = Modifier.fillParentMaxSize(),
-                            contentAlignment = Alignment.Center
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(
+                            onClick = { },
+                            Modifier.size(30.dp)
                         ) {
-                            AlaraInitMessage(
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                                contentDescription = null
+                            )
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 10.dp),
-                                text = "How can I help you today?"
-                            )
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickableWithOpaqueText {
+                                        chatViewModel.setClickType(AlaraClickType.MODELS)
+                                        chatViewModel.showSheet()
+                                    }
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                AlaraText(
+                                    text = selectedModel,
+                                    fontSize = 16.sp,
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Icon(
+                                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                                    contentDescription = null
+                                )
+                            }
                         }
                     }
-
-                }
-                items(
-                    items = messages,
-                    key = { it.id }
-                ) { msg ->
-                    if (msg.isUser) AlaraUserMessage(
-                        message =
-                            msg.message
-                    )
-                    else AlaraBotMessage(
-                        message = msg.message,
-                        isStreaming = isStreaming && msg.id == lastBotId
-                    )
-
-                    // Add a little space after every message
-//                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                if (chatState is AlaraChatUiState.Loading) {
-                    item {
-                        AlaraBotMessage(isLoading = true)
+                },
+                actions = {
+                    val size = Modifier.size(30.dp)
+                    IconButton(onClick = {}, modifier = size) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_alara_add_profile),
+                            contentDescription = null,
+                            Modifier.padding(5.dp)
+                        )
                     }
-
-                }
-
-                if (chatState is AlaraChatUiState.Error) {
-                    item {
-                        AlaraBotMessage(message = chatState.message, isLoading = false)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = { }, modifier = size) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_alara_share),
+                            contentDescription = null,
+                            Modifier.padding(5.dp)
+                        )
                     }
-
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = {}, modifier = size) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_alara_settings),
+                            contentDescription = null,
+                            Modifier.padding(5.dp)
+                        )
+                    }
                 }
+            )
+        },
+        bottomBar = {
+            AlaraTextBar(
+                value = chatMessage,
+                onValueChange = { chatMessage = it },
+                onClick = { type ->
+                    chatViewModel.setClickType(type)
+                    chatViewModel.showSheet()
+                },
+                onSend = {
+                    chatViewModel.sendMessage(message = chatMessage)
+                    chatMessage = ""
+                },
+                onStop = {
+                    chatViewModel.stopStreaming()
+                },
+                isLoading = chatState is AlaraChatUiState.Loading || isStreaming
+            )
+        },
+        content = { contentPadding ->
+            var animatedOverscrollAmount by remember { mutableFloatStateOf(0f) }
 
-            }
-        }
-
-        // show bottom sheet
-        AlaraAnimatedBottomSheet(
-            containerColor = AlaraColors.SheetColors,
-            isVisible = sheetVisible, onDismissRequest = {
-                chatViewModel.hideSheet()
-            }) {
-            val type = chatViewModel.clickType.collectAsState().value
-            when (type) {
-                AlaraClickType.MODELS -> {
-                    // show list of Models
-                    val models = chatViewModel.models.collectAsState().value
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .customOverscroll(
+                        listState,
+                        onNewOverscrollAmount = { animatedOverscrollAmount = it }
+                    )
+                    .offset { IntOffset(0, animatedOverscrollAmount.roundToInt()) }
+            ) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
+                        .padding(5.dp)
+                ) {
+                    if (messages.isEmpty()) {
                         item {
-                            AlaraText(
-                                text = "Alara Models",
-                                fontSize = 20.sp,
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
-                            )
-
-                            Divider(
-                                modifier = Modifier.padding(horizontal = 10.dp),
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-
+                            Box(
+                                modifier = Modifier.fillParentMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AlaraInitMessage(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 10.dp),
+                                    text = "How can I help you today?"
+                                )
+                            }
                         }
-                        items(models.size) {
-                            AlaraModelSelection(
-                                cardColor = AlaraColors.SheetColors,
-
-                                heading = models[it].heading,
-                                subHeading = models[it].subHeading,
-                                isSelected = models[it].isSelected,
-                                onClick = { selectedModel ->
-                                    chatViewModel.hideSheet()
-                                    chatViewModel.updateSelection(it)
-                                    chatViewModel.setModel(selectedModel)
-
-                                }
-                            )
-                        }
-
                     }
 
+                    items(
+                        items = messages,
+                        key = { it.id },
+                        contentType = { if (it.isUser) "user" else "bot" }
+                    ) { msg ->
+                        if (msg.isUser) {
+                            AlaraUserMessage(message = msg.message)
+                        } else {
+                            // Use key to prevent recreation
+                            key(msg.id) {
+                                AlaraBotMessage(
+                                    msg = msg,
+                                    isStreaming = isStreaming && msg.id == lastBotId,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-                }
-
-                AlaraClickType.ADD -> {
-                    val uploadOptions = chatViewModel.uploadOptions.collectAsState().value
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(uploadOptions.size) {
-                            AlaraFileSelection(
-                                cardColor = AlaraColors.SheetColors,
-                                icon = uploadOptions[it].icon,
-                                text = uploadOptions[it].text,
-                                onClick = { option ->
-
-
-                                }
+                    if (chatState is AlaraChatUiState.Loading) {
+                        item {
+                            AlaraBotMessage(
+                                isLoading = true,
                             )
                         }
                     }
-                }
 
-                else -> {}
+//                    if (chatState is AlaraChatUiState.Error) {
+//                        item {
+//                            AlaraBotMessage(
+//                                message = chatState.message,
+//                                isError = true,
+//                                messageId = msg.id
+//                            )
+//                        }
+//                    }
+                }
             }
 
+            // Bottom sheet for models and file upload
+            AlaraAnimatedBottomSheet(
+                containerColor = AlaraColors.SheetColors,
+                isVisible = sheetVisible,
+                onDismissRequest = {
+                    chatViewModel.hideSheet()
+                }
+            ) {
+                val type = chatViewModel.clickType.collectAsState().value
+                when (type) {
+                    AlaraClickType.MODELS -> {
+                        val models = chatViewModel.models.collectAsState().value
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            item {
+                                AlaraText(
+                                    text = "Alara Models",
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(
+                                        vertical = 10.dp,
+                                        horizontal = 10.dp
+                                    )
+                                )
+                                Divider(
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                            items(models.size) { index ->
+                                AlaraModelSelection(
+                                    cardColor = AlaraColors.SheetColors,
+                                    heading = models[index].heading,
+                                    subHeading = models[index].subHeading,
+                                    isSelected = models[index].isSelected,
+                                    onClick = { selectedModel ->
+                                        chatViewModel.hideSheet()
+                                        chatViewModel.updateSelection(index)
+                                        chatViewModel.setModel(selectedModel)
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    AlaraClickType.ADD -> {
+                        val uploadOptions = chatViewModel.uploadOptions.collectAsState().value
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(uploadOptions.size) { index ->
+                                AlaraFileSelection(
+                                    cardColor = AlaraColors.SheetColors,
+                                    icon = uploadOptions[index].icon,
+                                    text = uploadOptions[index].text,
+                                    onClick = { option ->
+                                        // Handle file selection
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {}
+                }
+            }
         }
-    })
+    )
 }
 
 
@@ -365,17 +413,10 @@ fun AlaraModelSelection(
     cardColor: Color = Color.Unspecified
 ) {
     Card(
-        onClick = {
-            onClick(heading)
-        },
+        onClick = { onClick(heading) },
         shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardColor,
-
-            ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        )
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = modifier
@@ -401,10 +442,8 @@ fun AlaraModelSelection(
                     contentDescription = null
                 )
             }
-
         }
     }
-
 }
 
 @Composable
@@ -416,17 +455,10 @@ fun AlaraFileSelection(
     cardColor: Color = Color.Unspecified
 ) {
     Card(
-        onClick = {
-            onClick(text)
-        },
+        onClick = { onClick(text) },
         shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardColor,
-
-            ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        )
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = modifier
@@ -440,25 +472,23 @@ fun AlaraFileSelection(
             AlaraText(text = text)
         }
     }
-
 }
 
 @Composable
 fun AlaraInitMessage(modifier: Modifier = Modifier, text: String) {
     Column(
-        modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AlaraText(text = text, fontSize = 22.sp, fontFamily = FontFamily.Serif)
     }
-
 }
-
 
 @Composable
 fun AlaraUserMessage(message: String) {
     BoxWithConstraints(
-
-        modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.CenterEnd
     ) {
         val maxWidth = maxWidth * 0.75f
 
@@ -466,8 +496,11 @@ fun AlaraUserMessage(message: String) {
             modifier = Modifier
                 .widthIn(max = maxWidth)
                 .background(
-                    color = MaterialTheme.colorScheme.inverseOnSurface, shape = RoundedCornerShape(
-                        topStart = 13.dp, topEnd = 13.dp, bottomStart = 13.dp
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    shape = RoundedCornerShape(
+                        topStart = 13.dp,
+                        topEnd = 13.dp,
+                        bottomStart = 13.dp
                     )
                 )
                 .padding(vertical = 10.dp, horizontal = 18.dp)
@@ -478,66 +511,70 @@ fun AlaraUserMessage(message: String) {
                 softWrap = true
             )
         }
-
     }
-
 }
 
 @Composable
 fun AlaraBotMessage(
     modifier: Modifier = Modifier,
-    message: String? = "",
+    msg: AlaraChatUiModels? = null,
     isLoading: Boolean = false,
-    isStreaming: Boolean = false
-) {
+    isStreaming: Boolean = false,
+    isError: Boolean = false,
+
+    ) {
     Column(modifier = modifier) {
-        // icon
+        // Header with icon and label
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
             Box(modifier = Modifier.padding(end = 10.dp)) {
-
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = Color.DarkGray
+                        modifier = Modifier.size(40.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Icon(
+                        painterResource(R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        Modifier.size(40.dp)
                     )
                 }
-                Icon(
-                    painterResource(R.mipmap.ic_launcher_foreground),
-                    contentDescription = null,
-                    Modifier.size(40.dp)
-                )
             }
 
-            if (!isLoading) {
-                AlaraText(text = stringResource(R.string.app_name))
 
-            } else {
-                AlaraText(text = "Thinking...")
-            }
+            AlaraText(
+                text = when {
+                    isLoading -> "Thinking..."
+                    isError -> "Error"
+                    else -> stringResource(R.string.app_name)
+                }
+            )
         }
 
-        Column(modifier = modifier.padding(start = 10.dp)) {
-            if (isStreaming) {
-                AlaraText(text = message!!)
-            } else {
-                val state = rememberMarkdownState(message!!)
-                AlaraMarkdownText(state = state)
-            }
-
+        // Message content
+        val messageContent = msg?.message ?: ""
+        if (isStreaming) {
+            AlaraText(text = msg?.message ?: "")
+        } else {
+//            var isParsed by remember(messageContent) { mutableStateOf(false) }
+            val context = rememberMarkdownState(content = messageContent)
+            AlaraMarkdownText(content = context)
+//            }
         }
 
-
-        if (!isLoading) {
+        // Action buttons (only show for completed messages)
+        if (!isStreaming && !isError) {
             val iconModifier = Modifier
                 .background(
                     color = MaterialTheme.colorScheme.background,
-                    shape = RoundedCornerShape(50),
-
-                    )
+                    shape = RoundedCornerShape(50)
+                )
                 .size(50.dp)
                 .padding(5.dp)
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -546,47 +583,51 @@ fun AlaraBotMessage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AlaraIconButton(
-                    onClick = {},
+                    onClick = { /* Copy to clipboard */ },
                     modifier = iconModifier,
                     iconTint = MaterialTheme.colorScheme.onBackground,
                     imageVector = Icons.Rounded.CopyAll,
-                    contentDescription = null,
+                    contentDescription = "Copy",
                     painter = null
                 )
 
                 AlaraIconButton(
-                    onClick = {},
+                    onClick = { /* Thumbs up */ },
                     modifier = iconModifier,
                     iconTint = MaterialTheme.colorScheme.onBackground,
                     imageVector = Icons.Outlined.ThumbUpAlt,
-                    contentDescription = null,
+                    contentDescription = "Like",
                     painter = null
                 )
 
-
                 AlaraIconButton(
-                    onClick = {},
+                    onClick = { /* Thumbs down */ },
                     modifier = iconModifier,
                     iconTint = MaterialTheme.colorScheme.onBackground,
                     imageVector = Icons.Outlined.ThumbDownAlt,
-                    contentDescription = null,
+                    contentDescription = "Dislike",
                     painter = null
                 )
             }
+        }
 
+        // Disclaimer
+        if (!isStreaming && !isError) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AlaraText(text = "AlaraV2 can make mistakes, so double-check it", fontSize = 12.sp)
-
+                AlaraText(
+                    text = "AlaraV2 can make mistakes, so double-check it",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
             }
         }
-
-
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -595,22 +636,11 @@ fun AlaraChatScreenPreview() {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
-    // Simple logic to mock the size class for Preview purposes
     val mockSizeClass = if (screenWidth < 600.dp) {
         WindowWidthSizeClass.Compact
     } else {
         WindowWidthSizeClass.Expanded
     }
-//    Column(Modifier.padding(top = 10.dp)) {
-//        AlaraBotMessage(
-//            message = "Hellow tere how are you", isLoading = true
-//        )
-//    }
+
     AlaraChatComposable(windowWidthSizeClass = mockSizeClass)
-//    AlaraModelSelection(
-//        modifier = Modifier.padding(top = 20.dp),
-//        heading = "AutoGPT",
-//        subHeading = "Autonomous agent that breaks goals into sub-tasks using GPT-4.",
-//        isSelected = true
-//    )
 }
