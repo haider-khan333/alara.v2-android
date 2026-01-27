@@ -232,6 +232,16 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                         }
                     }
 
+                    if (chatState is AlaraChatUiState.Error) {
+                        item {
+                            AlaraBotMessage(
+                                isError = true,
+                                errorMessage = chatState.message
+
+                            )
+                        }
+                        }
+
                 }
             }
 
@@ -471,6 +481,7 @@ fun AlaraBotMessage(
     isLoading: Boolean = false,
     isStreaming: Boolean = false,
     isError: Boolean = false,
+    errorMessage: String = "",
     markdownState: MutableMap<String, MarkdownState> = mutableMapOf()
 
 ) {
@@ -497,14 +508,13 @@ fun AlaraBotMessage(
 
 
             AlaraText(
-                text = when {
-                    isLoading -> "Thinking..."
-                    isError -> "Error"
-                    else -> stringResource(R.string.app_name)
-                }
+                text = stringResource(R.string.app_name)
             )
         }
 
+        if(isError){
+            AlaraText(text = errorMessage, maxLines = 5, softWrap = true)
+        }
         val messageContent = msg?.message ?: ""
         if (isStreaming) {
             AlaraText(text = msg?.message ?: "")
@@ -527,7 +537,7 @@ fun AlaraBotMessage(
         }
 
         // Action buttons (only show for completed messages)
-        if (!isStreaming && !isError) {
+        if (!isStreaming && !isError && !isLoading) {
             val iconModifier = Modifier
                 .background(
                     color = MaterialTheme.colorScheme.background,
@@ -573,7 +583,7 @@ fun AlaraBotMessage(
         }
 
         // Disclaimer
-        if (!isStreaming && !isError) {
+        if (!isStreaming && !isError && !isLoading) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,

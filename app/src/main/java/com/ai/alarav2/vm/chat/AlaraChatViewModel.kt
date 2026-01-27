@@ -217,15 +217,27 @@ class AlaraChatViewModel @Inject constructor(
 
     private fun handleError(error: AlaraChatError) {
         val errorMessage = when (error.code) {
-            401 -> "Unauthorized"
-            in 500..509 -> "Server Error"
-            else -> error.toUiMessage()
+            // Auth Errors
+            401 -> "Your session has expired. Please sign in again to continue."
+            403 -> "You don't have permission to access this. Please check your account status."
+
+            // Server Errors (Categorized)
+            500 -> "Our servers are having a moment. Please try again shortly."
+            503 -> "Alara is currently at capacity. Please check back in a few minutes."
+            504 -> "The server took too long to respond. Please try again."
+            in 500..509 -> "We're experiencing technical difficulties. We're working on it!"
+
+            // Client / Network Errors (Common codes for no internet/timeout)
+            -1, -2 -> "No internet connection. Please check your network settings."
+            408 -> "Request timed out. Please check your connection and try again."
+            429 -> "You've sent too many messages too quickly. Please wait a moment."
+
+            // Fallback using your existing mapper or a generic friendly message
+            else -> error.toUiMessage().ifBlank { "Something went wrong. Please try again." }
         }
 
         _chatState.value = AlaraChatUiState.Error(errorMessage)
-        _messages.update {
-            it + AlaraChatUiModels(message = errorMessage, isUser = false)
-        }
+        streamingJob?.cancel()
     }
 
     override fun onCleared() {
