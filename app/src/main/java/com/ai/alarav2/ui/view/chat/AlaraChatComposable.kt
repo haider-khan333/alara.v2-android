@@ -1,6 +1,5 @@
 package com.ai.alarav2.ui.view.chat
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,15 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
-import androidx.compose.material.icons.automirrored.rounded.MenuOpen
-import androidx.compose.material.icons.automirrored.rounded.ViewSidebar
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ThumbDownAlt
 import androidx.compose.material.icons.outlined.ThumbUpAlt
@@ -48,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,7 +49,6 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,14 +57,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import com.ai.alarav2.R
 import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.ui.theme.AlaraColors
@@ -86,22 +76,9 @@ import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
 import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.vm.chat.AlaraChatUiState
 import com.ai.alarav2.vm.chat.AlaraChatViewModel
-import com.mikepenz.markdown.compose.components.MarkdownComponents
-import com.mikepenz.markdown.compose.components.markdownComponents
-import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeFence
-import com.mikepenz.markdown.m3.Markdown
-import com.mikepenz.markdown.m3.markdownColor
-import com.mikepenz.markdown.m3.markdownTypography
-import com.mikepenz.markdown.model.MarkdownColors
 import com.mikepenz.markdown.model.MarkdownState
-import com.mikepenz.markdown.model.MarkdownTypography
-import com.mikepenz.markdown.model.State
 import com.mikepenz.markdown.model.rememberMarkdownState
 import customOverscroll
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlin.math.log
 import kotlin.math.roundToInt
 
 
@@ -119,6 +96,9 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     val lastBotId = messages.lastOrNull { !it.isUser }?.id
     val markdownCache = remember { mutableStateMapOf<String, MarkdownState>() }
 
+    LaunchedEffect(messages.size) {
+        listState.animateScrollToItem(messages.size)
+    }
 
     Scaffold(
         topBar = {

@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -20,6 +22,7 @@ import com.ai.alarav2.routes.AlaraRoutes
 import com.ai.alarav2.ui.theme.AlaraV2Theme
 import com.ai.alarav2.ui.view.components.drawer.AlaraDrawer
 import com.ai.alarav2.ui.view.components.drawer.AlaraDrawerContainer
+import com.ai.alarav2.ui.view.splashscreen.AlaraSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -34,22 +37,38 @@ class MainActivity : ComponentActivity() {
             val windowSize = calculateWindowSizeClass(this)
             var isDrawerOpened by remember { mutableStateOf(false) }
 
-            AlaraV2Theme {
-                AlaraDrawerContainer(isDrawerOpened = isDrawerOpened, onSwipe = {
-                    isDrawerOpened = it
-                }) {
+            var showSplash by remember { mutableStateOf(true) }
 
-                    AlaraDrawer(selectedItem = AlaraRoutes.Dashboard, onItemClick = { route ->
-                        navController.navigate(route)
-                    })
+            Crossfade(
+                targetState = showSplash,
+                label = "SplashTransition",
+                animationSpec = tween(durationMillis = 1000) // Adjust speed (e.g., 700ms)
+            ) { isSplash ->
+                if (isSplash) {
+                    AlaraSplashScreen {
+                        showSplash = false
+                    }
+                } else {
+                    // The entire App structure fades in together
+                    AlaraV2Theme {
+                        AlaraDrawerContainer(
+                            isDrawerOpened = isDrawerOpened,
+                            onSwipe = { isDrawerOpened = it }
+                        ) {
+                            AlaraDrawer(
+                                selectedItem = AlaraRoutes.Dashboard,
+                                onItemClick = { route -> navController.navigate(route) }
+                            )
 
-                    AlaraRouter(
-                        navController = navController,
-                        windowWidthSizeClass = windowSize.widthSizeClass
-                    )
+                            AlaraRouter(
+                                navController = navController,
+                                windowWidthSizeClass = windowSize.widthSizeClass
+                            )
+                        }
+                    }
                 }
-
             }
+
         }
     }
 }

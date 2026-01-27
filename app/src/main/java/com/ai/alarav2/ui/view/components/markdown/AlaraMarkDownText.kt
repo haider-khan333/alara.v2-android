@@ -65,7 +65,7 @@ fun AlaraMarkdownText(
     Markdown(
         markdownState = content,
         modifier = modifier,
-        loading = { MarkdownLoadingPlaceholder() },
+//        loading = { MarkdownLoadingPlaceholder() },
         colors = alaraColors,
         components = markdownComponents(
             codeFence = {

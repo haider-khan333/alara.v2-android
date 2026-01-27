@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -32,10 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ai.alarav2.R
+import com.ai.alarav2.ui.theme.AlaraDarkGray
 import com.ai.alarav2.ui.view.components.AlaraText
 
 enum class AlaraClickType {
@@ -130,7 +134,6 @@ fun AlaraTextBar(
                     }
 
                     BasicTextField(
-//                        value = "value\najalklnlnd\nihdd\naisudhad\naisudhasd",
                         value = value,
                         onValueChange = onValueChange,
                         maxLines = 5,
@@ -144,24 +147,51 @@ fun AlaraTextBar(
                     )
                 }
 
+
                 // Send Button
                 Box(Modifier.fillMaxHeight()) {
-                    AlaraIconButton(
-                        enabled = isTyping,
-                        onClick = { if (isTyping) onSend() },
-                        imageVector = Icons.Rounded.ArrowUpward,
-                        contentDescription = "Send",
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                color = sendButtonColor,
-                                shape = CircleShape
-                            )
-                            .size(35.dp),
-                        // 3. Prevents icon from touching capsule edges
-                        iconTint = sendIconColor,
-                        painter = null
-                    )
+                    if (isLoading) {
+                        AlaraIconButton(
+                            onClick = {
+                                onStop()
+                            },
+                            imageVector = null,
+                            contentDescription = null,
+                            painter = painterResource(R.drawable.ic_stop),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    color = sendButtonColor,
+                                    shape = CircleShape
+                                )
+                                .size(35.dp),
+                            iconModifier = Modifier.padding(6.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Color.Black,
+                                disabledContainerColor = AlaraDarkGray.copy(alpha = 0.5f),
+                            ),
+                            iconTint = Color.White
+
+
+                        )
+                    } else {
+                        AlaraIconButton(
+                            enabled = isTyping,
+                            onClick = { if (isTyping) onSend() },
+                            imageVector = Icons.Rounded.ArrowUpward,
+                            contentDescription = "Send",
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    color = sendButtonColor,
+                                    shape = CircleShape
+                                )
+                                .size(35.dp),
+                            // 3. Prevents icon from touching capsule edges
+                            iconTint = sendIconColor,
+                            painter = null
+                        )
+                    }
                 }
             }
         }
