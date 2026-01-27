@@ -39,11 +39,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -84,6 +86,7 @@ import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.MarkdownColors
+import com.mikepenz.markdown.model.MarkdownState
 import com.mikepenz.markdown.model.MarkdownTypography
 import com.mikepenz.markdown.model.State
 import com.mikepenz.markdown.model.rememberMarkdownState
@@ -107,70 +110,8 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
     val chatState = chatViewModel.chatState.collectAsState().value
     val isStreaming = chatState is AlaraChatUiState.Streaming
     val lastBotId = messages.lastOrNull { !it.isUser }?.id
+    val markdownCache = remember { mutableStateMapOf<String, MarkdownState>() }
 
-    val isAtBottom by remember {
-        derivedStateOf { !listState.canScrollForward }
-    }
-    val canAutoScroll by remember {
-        derivedStateOf { isAtBottom && !listState.isScrollInProgress }
-    }
-
-    // Auto-scroll for new messages
-    LaunchedEffect(messages.size) {
-        if (messages.isEmpty()) return@LaunchedEffect
-        if (!canAutoScroll) return@LaunchedEffect
-        listState.animateScrollToItem(messages.size - 1)
-    }
-
-    // Smooth auto-scroll during streaming with optimized debounce
-    LaunchedEffect(isStreaming) {
-        if (!isStreaming) return@LaunchedEffect
-
-        snapshotFlow { messages.lastOrNull()?.message }
-            .filter { it != null }
-            .distinctUntilChanged()
-            .debounce(100) // Increased debounce for smoother scrolling
-            .collect {
-                if (canAutoScroll && messages.isNotEmpty()) {
-                    listState.animateScrollToItem(messages.size - 1)
-                }
-            }
-    }
-
-
-    val textColor = MaterialTheme.colorScheme.onBackground
-    val codeBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-
-    val alaraTypography = markdownTypography(
-        text = TextStyle(fontFamily = FontFamily.Serif, fontSize = 16.sp, color = textColor),
-        h1 = TextStyle(fontFamily = FontFamily.Serif, fontSize = 22.sp, color = textColor),
-        code = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp, color = textColor)
-    )
-
-    val alaraColors = markdownColor(
-        text = textColor,
-        dividerColor = Color.Gray.copy(alpha = 0.5f),
-        codeBackground = codeBackground
-    )
-
-    // Initialize the components (Highlighter) ONLY ONCE
-    val alaraComponents = remember {
-        markdownComponents(
-            codeFence = { fence ->
-                MarkdownHighlightedCodeFence(
-                    content = fence.content,
-                    node = fence.node
-                )
-            },
-            codeBlock = {
-                MarkdownHighlightedCodeFence(
-                    content = it.content,
-                    node = it.node,
-                    style = it.typography.code
-                )
-            }
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -310,6 +251,7 @@ fun AlaraChatComposable(windowWidthSizeClass: WindowWidthSizeClass) {
                                 AlaraBotMessage(
                                     msg = msg,
                                     isStreaming = isStreaming && msg.id == lastBotId,
+                                    markdownState = markdownCache
                                 )
                             }
                         }
@@ -521,8 +463,9 @@ fun AlaraBotMessage(
     isLoading: Boolean = false,
     isStreaming: Boolean = false,
     isError: Boolean = false,
+    markdownState: MutableMap<String, MarkdownState> = mutableMapOf()
 
-    ) {
+) {
     Column(modifier = modifier) {
         // Header with icon and label
         Row(
@@ -559,10 +502,27 @@ fun AlaraBotMessage(
         if (isStreaming) {
             AlaraText(text = msg?.message ?: "")
         } else {
-//            var isParsed by remember(messageContent) { mutableStateOf(false) }
-            val context = rememberMarkdownState(content = messageContent)
-            AlaraMarkdownText(content = context)
-//            }
+            // 1. Check if we already have a parsed state for this message ID
+            val cachedState = if (msg != null) markdownState[msg.id] else null
+
+            if (cachedState != null) {
+                // CASE A: We have it cached!
+                // Render immediately. The parsing is already done inside this object.
+                AlaraMarkdownText(content = cachedState)
+            } else {
+                // CASE B: It's the first time rendering this message.
+                // We use the library function to create the state and parse the text.
+                val newState = rememberMarkdownState(content = messageContent)
+
+                // SAVE IT: We store it in the map so next time (after scroll) we hit Case A.
+                if (msg != null) {
+                    SideEffect {
+                        markdownState[msg.id] = newState
+                    }
+                }
+
+                AlaraMarkdownText(content = newState)
+            }
         }
 
         // Action buttons (only show for completed messages)

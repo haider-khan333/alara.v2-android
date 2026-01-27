@@ -8,11 +8,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.ai.alarav2.routes.AlaraRouter
+import com.ai.alarav2.routes.AlaraRoutes
 import com.ai.alarav2.ui.theme.AlaraV2Theme
+import com.ai.alarav2.ui.view.components.drawer.AlaraDrawer
+import com.ai.alarav2.ui.view.components.drawer.AlaraDrawerContainer
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -25,12 +32,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val windowSize = calculateWindowSizeClass(this)
+            var isDrawerOpened by remember { mutableStateOf(false) }
 
             AlaraV2Theme {
-                AlaraRouter(
-                    navController = navController,
-                    windowWidthSizeClass = windowSize.widthSizeClass
-                )
+                AlaraDrawerContainer(isDrawerOpened = isDrawerOpened, onSwipe = {
+                    isDrawerOpened = it
+                }) {
+
+                    AlaraDrawer(selectedItem = AlaraRoutes.Dashboard, onItemClick = { route ->
+                        navController.navigate(route)
+                    })
+
+                    AlaraRouter(
+                        navController = navController,
+                        windowWidthSizeClass = windowSize.widthSizeClass
+                    )
+                }
+
             }
         }
     }

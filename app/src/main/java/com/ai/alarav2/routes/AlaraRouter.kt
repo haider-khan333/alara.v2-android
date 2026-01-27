@@ -18,18 +18,18 @@ fun AlaraRouter(
     NavHost(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
-        startDestination = AlaraRoutes.AlaraChat,
+        startDestination = AlaraRoutes.Chat,
 
         ) {
-        composable<AlaraRoutes.AlaraChat> {
+        composable<AlaraRoutes.Chat> {
             AlaraChatComposable(windowWidthSizeClass = windowWidthSizeClass)
         }
 
-        composable<AlaraRoutes.AlaraDashboard> {
+        composable<AlaraRoutes.Dashboard> {
             AlaraDashboardComposable(
                 windowWidthSizeClass = windowWidthSizeClass,
                 onClick = {
-                    navController.navigate(AlaraRoutes.AlaraChat)
+                    navController.navigate(AlaraRoutes.Chat)
 
                 })
         }

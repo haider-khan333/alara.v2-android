@@ -4,9 +4,9 @@ import kotlinx.serialization.Serializable
 
 sealed interface AlaraRoutes {
     @Serializable
-    data object AlaraChat : AlaraRoutes
+    data object Chat : AlaraRoutes
 
     @Serializable
-    data object AlaraDashboard : AlaraRoutes
+    data object Dashboard : AlaraRoutes
 
 }
