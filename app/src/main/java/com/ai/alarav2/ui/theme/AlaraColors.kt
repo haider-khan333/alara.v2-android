@@ -71,11 +71,7 @@ object AlaraColors {
 
     val AlaraAppIcon: Painter
         @Composable
-        get() = if (isSystemInDarkTheme()) {
-            painterResource(R.drawable.logo_app_white)
-        } else {
-            painterResource(R.drawable.logo_app_black)
-        }
+        get() = painterResource(R.drawable.logo_app_black)
 
 
 }

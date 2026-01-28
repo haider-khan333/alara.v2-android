@@ -10,6 +10,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +48,11 @@ fun AlaraSplashScreen(onSplashFinished: () -> Unit) {
         onSplashFinished()
     }
 
+    val icon = if(isSystemInDarkTheme()){
+        painterResource(id = R.drawable.logo_app_white)
+    }else{
+        painterResource(id = R.drawable.logo_app_black)
+    }
 
     Box(
         contentAlignment = Alignment.Center,
@@ -56,11 +62,11 @@ fun AlaraSplashScreen(onSplashFinished: () -> Unit) {
     ) {
         // REPLACE R.drawable.logo with your actual logo resource ID
         Image(
-            painter = AlaraColors.AlaraAppIcon,
+            painter = icon,
             contentDescription = "App Logo",
             modifier = Modifier
                 .size(100.dp) // Adjust size as needed
-                .scale(scale.value)
+                .scale(scale.value),
         )
     }
 }

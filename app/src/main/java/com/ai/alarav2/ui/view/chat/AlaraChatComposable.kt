@@ -336,7 +336,7 @@ fun AlaraChatComposable(
                                 chatViewModel.updateSelection(index)
                                 chatViewModel.setModel(selectedModel)
                                 // Optional: Close sheet on model selection
-                                 chatViewModel.hideSheet()
+                                chatViewModel.hideSheet()
                             }
                         )
                     }
@@ -500,9 +500,12 @@ fun AlaraBotMessage(
                     )
                 } else {
                     Icon(
-                        AlaraColors.AlaraAppIcon,
+                        painterResource(R.drawable.logo_app_black),
                         contentDescription = null,
-                        Modifier.size(40.dp)
+                        Modifier
+                            .size(35.dp)
+                            .padding(start = 10.dp, end = 10.dp, bottom = 3.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
