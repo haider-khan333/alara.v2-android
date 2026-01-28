@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -19,6 +20,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.ai.alarav2.R
+import com.ai.alarav2.ui.theme.AlaraColors
 import kotlinx.coroutines.delay
 
 @Composable
@@ -45,18 +47,19 @@ fun AlaraSplashScreen(onSplashFinished: () -> Unit) {
         onSplashFinished()
     }
 
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface) // Use your app's background color
+            .background(AlaraColors.Background) // Use your app's background color
     ) {
         // REPLACE R.drawable.logo with your actual logo resource ID
         Image(
-            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+            painter = AlaraColors.AlaraAppIcon,
             contentDescription = "App Logo",
             modifier = Modifier
-                .size(200.dp) // Adjust size as needed
+                .size(100.dp) // Adjust size as needed
                 .scale(scale.value)
         )
     }

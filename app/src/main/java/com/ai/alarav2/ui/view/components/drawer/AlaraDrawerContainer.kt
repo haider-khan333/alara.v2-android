@@ -1,5 +1,9 @@
 package com.ai.alarav2.ui.view.components.drawer
 
+import android.R
+import android.util.Log
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -50,14 +54,23 @@ import com.ai.alarav2.routes.AlaraRoutes
 import kotlin.math.roundToInt
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import com.ai.alarav2.ui.theme.AlaraColors
+import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
+import com.ai.alarav2.ui.view.components.AlaraText
+import com.ai.alarav2.vm.drawer.AlaraDrawerVm
 
 
 /**
@@ -74,27 +87,32 @@ import androidx.compose.ui.text.TextStyle
 @Composable
 fun AlaraDrawerContainer(
     modifier: Modifier = Modifier,
-    isDrawerOpened: Boolean = false,
-    drawerWidth: Dp = 280.dp,
-    onSwipe: (Boolean) -> Unit = {},
+    drawerWidth: Dp = 320.dp,
+    viewModel: AlaraDrawerVm,
     drawerContent: @Composable () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val density = LocalDensity.current
 
-    // 1. Detect Keyboard State (IME)
-    // Note: Ensure your Activity in manifest has android:windowSoftInputMode="adjustResize"
-    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    val isDrawerOpen = viewModel.drawerState.collectAsState().value
+    BackHandler(enabled = isDrawerOpen) {
+        viewModel.closeDrawer()
+
+    }
+
+    val density = LocalDensity.current
+    val drawerState = viewModel.drawerState.collectAsState().value
+
+    @OptIn(ExperimentalLayoutApi::class)
     val isImeVisible = WindowInsets.isImeVisible
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
         val screenWidth = maxWidth
 
-        // 2. Dynamic Width Calculation
-        // If keyboard is open AND drawer is open, width = Screen Width. Else 280dp.
-        val targetWidth = if (isImeVisible && isDrawerOpened) screenWidth else drawerWidth
+        val targetWidth = if (isImeVisible && drawerState) screenWidth else drawerWidth
 
-        // Animate the width change smoothly
         val animatedDrawerWidth by animateDpAsState(
             targetValue = targetWidth,
             animationSpec = tween(300),
@@ -103,7 +121,7 @@ fun AlaraDrawerContainer(
 
         val drawerWidthPx = with(density) { animatedDrawerWidth.toPx() }
 
-        val transition = updateTransition(targetState = isDrawerOpened, label = "Drawer")
+        val transition = updateTransition(targetState = drawerState, label = "Drawer")
         val slidePercent by transition.animateFloat(
             transitionSpec = { tween(300) },
             label = "Slide"
@@ -118,15 +136,13 @@ fun AlaraDrawerContainer(
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures { change, dragAmount ->
                         change.consume()
-                        // Disable swipe if in full-screen search mode
                         if (!isImeVisible) {
-                            if (dragAmount > 20) onSwipe(true)
-                            else if (dragAmount < -20) onSwipe(false)
+                            if (dragAmount > 20) viewModel.openDrawer()
+                            else if (dragAmount < -20) viewModel.closeDrawer()
                         }
                     }
                 }
         ) {
-            // --- DRAWER ---
             Box(
                 modifier = Modifier
                     .width(animatedDrawerWidth)
@@ -137,7 +153,6 @@ fun AlaraDrawerContainer(
                 drawerContent()
             }
 
-            // --- MAIN CONTENT ---
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -146,18 +161,16 @@ fun AlaraDrawerContainer(
             ) {
                 content()
 
-                // Dimming Overlay / Interaction Blocker
                 if (slidePercent > 0) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(Color.Black.copy(alpha = 0.3f * slidePercent))
                             .clickable(
-                                enabled = true, // Always capture clicks when open
+                                enabled = true,
                                 onClick = {
-                                    // Only close if NOT in full-screen search mode
                                     if (!isImeVisible) {
-                                        onSwipe(false)
+                                        viewModel.closeDrawer()
                                     }
                                 }
                             )
@@ -174,9 +187,9 @@ fun AlaraDrawer(
     onItemClick: (AlaraRoutes) -> Unit,
     onNewChatClick: () -> Unit = {}
 ) {
-    val drawerBg = MaterialTheme.colorScheme.surface
-    val contentColor = MaterialTheme.colorScheme.onSurface
-    val searchBarBg = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    val drawerBg = AlaraColors.Background
+    val contentColor = AlaraColors.MainContent
+    val searchBarBg = AlaraColors.Input
 
     // State for the search field
     var searchText by remember { mutableStateOf("") }
@@ -190,21 +203,19 @@ fun AlaraDrawer(
                 .fillMaxSize()
                 .systemBarsPadding() // Ensures UI respects safe areas
         ) {
-            // --- TOP HEADER ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, start = 12.dp, end = 12.dp, bottom = 16.dp),
+                    .padding(top = 10.dp, start = 12.dp, end = 12.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // REAL SEARCH FIELD (Triggers Keyboard)
                 BasicTextField(
                     value = searchText,
                     onValueChange = { searchText = it },
                     modifier = Modifier
                         .weight(1f)
                         .height(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(searchBarBg)
                         .padding(horizontal = 12.dp),
                     singleLine = true,
@@ -221,11 +232,11 @@ fun AlaraDrawer(
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(modifier = Modifier.weight(1f)) {
                                 if (searchText.isEmpty()) {
-                                    Text(
+                                    AlaraText(
                                         text = "Search",
                                         color = contentColor.copy(alpha = 0.6f),
-                                        fontSize = 14.sp
-                                    )
+
+                                        )
                                 }
                                 innerTextField()
                             }
@@ -235,30 +246,21 @@ fun AlaraDrawer(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // New Chat Button
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(searchBarBg)
-                        .clickable { onNewChatClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "New Chat",
-                        tint = contentColor
-                    )
-                }
+                AlaraIconButton(
+                    onClick = {},
+                    imageVector = Icons.Rounded.EditNote,
+                    contentDescription = "Eidt",
+                    painter = null,
+                    iconTint = AlaraColors.MainContent
+                )
             }
 
-            // --- LIST (Pushes footer down) ---
             LazyColumn(
                 modifier = Modifier.weight(1f), // KEY CHANGE: Fills available space
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp)
             ) {
                 item {
-                    Text(
+                    AlaraText(
                         text = "Recent",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -298,7 +300,7 @@ fun AlaraDrawer(
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(
+                            AlaraText(
                                 text = "MK",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -309,7 +311,7 @@ fun AlaraDrawer(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
+                        AlaraText(
                             text = "Muhammad Khan",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
@@ -317,7 +319,7 @@ fun AlaraDrawer(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
+                        AlaraText(
                             text = "Pro Plan",
                             fontSize = 12.sp,
                             color = contentColor.copy(alpha = 0.6f)
@@ -357,7 +359,7 @@ fun DrawerChatItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        Text(
+        AlaraText(
             text = text,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface,

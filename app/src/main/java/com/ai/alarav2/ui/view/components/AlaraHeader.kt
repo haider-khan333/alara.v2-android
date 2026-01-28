@@ -22,7 +22,8 @@ fun AlaraHeader(
     if (isCentered) {
         CenterAlignedTopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = containerColor
+                containerColor = containerColor,
+                scrolledContainerColor = containerColor
             ),
             title = { content() },
             modifier = modifier,
@@ -32,7 +33,8 @@ fun AlaraHeader(
     } else {
         TopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = containerColor
+                containerColor = containerColor,
+                scrolledContainerColor = containerColor
             ),
             title = { content() },
             modifier = modifier,

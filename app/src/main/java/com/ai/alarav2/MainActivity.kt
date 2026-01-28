@@ -10,12 +10,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.ai.alarav2.routes.AlaraRouter
 import com.ai.alarav2.routes.AlaraRoutes
@@ -23,6 +25,7 @@ import com.ai.alarav2.ui.theme.AlaraV2Theme
 import com.ai.alarav2.ui.view.components.drawer.AlaraDrawer
 import com.ai.alarav2.ui.view.components.drawer.AlaraDrawerContainer
 import com.ai.alarav2.ui.view.splashscreen.AlaraSplashScreen
+import com.ai.alarav2.vm.drawer.AlaraDrawerVm
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -35,30 +38,30 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val windowSize = calculateWindowSizeClass(this)
-            var isDrawerOpened by remember { mutableStateOf(false) }
+            val drawerViewModel: AlaraDrawerVm = hiltViewModel()
 
-            var showSplash by remember { mutableStateOf(true) }
-
+//            var showSplash by remember { mutableStateOf(true) }
+            val showSplashScreen = drawerViewModel.showSplashScreen.collectAsState().value
             Crossfade(
-                targetState = showSplash,
+//                targetState = showSplash,
+                targetState = showSplashScreen,
                 label = "SplashTransition",
                 animationSpec = tween(durationMillis = 1000) // Adjust speed (e.g., 700ms)
             ) { isSplash ->
                 if (isSplash) {
                     AlaraSplashScreen {
-                        showSplash = false
+//                        showSplash = false
+                        drawerViewModel.hideSplashScreen()
                     }
                 } else {
                     // The entire App structure fades in together
                     AlaraV2Theme {
                         AlaraDrawerContainer(
-                            isDrawerOpened = isDrawerOpened,
-                            onSwipe = { isDrawerOpened = it }
-                        , drawerContent = {
+                            viewModel = drawerViewModel, drawerContent = {
                                 AlaraDrawer(
                                     selectedItem = AlaraRoutes.Dashboard,
                                     onItemClick = { route ->
-                                        isDrawerOpened = false // Close on click
+                                        drawerViewModel.closeDrawer() // Close on click
                                         navController.navigate(route)
                                     }
                                 )
@@ -66,7 +69,8 @@ class MainActivity : ComponentActivity() {
 
                             AlaraRouter(
                                 navController = navController,
-                                windowWidthSizeClass = windowSize.widthSizeClass
+                                windowWidthSizeClass = windowSize.widthSizeClass,
+                                drawerVm = drawerViewModel
                             )
                         }
                     }
