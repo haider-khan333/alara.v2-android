@@ -19,6 +19,7 @@ val AlaraChipLight = Color(0xFFEBEBEB)
 val AlaraChipDark = Color(0xFF2C2C2C)
 
 val AlaraChipGrayBorder = Color(0x99D3D3D3)
+val AlaraButtonColor = Color(0xFF0091FF)
 val AlaraWhite = Color(0xD7FFFFFF)
 val AlaraDarkGray = Color(0xD7383838)
 val AlaraRating = Color(0xABFFA534)

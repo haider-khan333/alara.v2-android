@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.ai.alarav2.ui.view.chat.AlaraChatComposable
 import com.ai.alarav2.ui.view.dashboard.AlaraDashboardComposable
+import com.ai.alarav2.ui.view.login.AlaraLoginScreen
 import com.ai.alarav2.vm.drawer.AlaraDrawerVm
 
 @Composable
@@ -21,7 +22,7 @@ fun AlaraRouter(
     NavHost(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
-        startDestination = AlaraRoutes.Chat,
+        startDestination = AlaraRoutes.Login,
 
         ) {
         composable<AlaraRoutes.Chat> {
@@ -38,6 +39,10 @@ fun AlaraRouter(
                     navController.navigate(AlaraRoutes.Chat)
 
                 })
+        }
+
+        composable<AlaraRoutes.Login> {
+            AlaraLoginScreen()
         }
     }
 

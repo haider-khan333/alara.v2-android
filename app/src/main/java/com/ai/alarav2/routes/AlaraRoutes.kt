@@ -9,4 +9,6 @@ sealed interface AlaraRoutes {
     @Serializable
     data object Dashboard : AlaraRoutes
 
+    @Serializable
+    data object Login : AlaraRoutes
 }

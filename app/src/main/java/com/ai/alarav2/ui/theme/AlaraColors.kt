@@ -73,5 +73,9 @@ object AlaraColors {
         @Composable
         get() = painterResource(R.drawable.logo_app_black)
 
+    val AlaraAppIconHorizontal: Painter
+        @Composable
+        get() = painterResource(R.drawable.logo_app_black)
+
 
 }
