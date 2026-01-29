@@ -2,6 +2,8 @@ package com.ai.alarav2.di
 
 import com.ai.alarav2.repository.chat.AlaraChatImpl
 import com.ai.alarav2.repository.chat.AlaraChatRepo
+import com.ai.alarav2.repository.getagent.AlaraGetAgentImpl
+import com.ai.alarav2.repository.getagent.AlaraGetAgentRepo
 import com.ai.alarav2.repository.login.AlaraLoginImpl
 import com.ai.alarav2.repository.login.AlaraLoginRepo
 import dagger.Binds
@@ -25,6 +27,12 @@ abstract class AlaraRepositoryModule {
     abstract fun bindAlaraLoginRepo(
         impl: AlaraLoginImpl
     ): AlaraLoginRepo
+
+    @Binds
+    @Singleton
+    abstract fun bindAlaraGetAgentRepo(
+        impl: AlaraGetAgentImpl
+    ): AlaraGetAgentRepo
 
 
 }

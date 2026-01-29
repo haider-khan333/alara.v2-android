@@ -1,7 +1,6 @@
 package com.ai.alarav2.ui.view.chat
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -27,15 +26,15 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ThumbDownAlt
 import androidx.compose.material.icons.outlined.ThumbUpAlt
 import androidx.compose.material.icons.rounded.CopyAll
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -52,7 +51,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -73,10 +71,10 @@ import com.ai.alarav2.ui.view.chat.components.AlaraTextBar
 import com.ai.alarav2.ui.view.components.AlaraAnimatedBottomSheet
 import com.ai.alarav2.ui.view.components.AlaraHeader
 import com.ai.alarav2.ui.view.components.AlaraText
-import com.ai.alarav2.ui.view.components.clickableWithOpaqueText
 import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.vm.chat.AlaraChatUiState
 import com.ai.alarav2.vm.chat.AlaraChatViewModel
+import com.ai.alarav2.vm.chat.AlaraGetAgentState
 import com.ai.alarav2.vm.drawer.AlaraDrawerVm
 import com.mikepenz.markdown.model.MarkdownState
 import com.mikepenz.markdown.model.rememberMarkdownState
@@ -99,10 +97,32 @@ fun AlaraChatComposable(
     val chatState = chatViewModel.chatState.collectAsState().value
     val isStreaming = chatState is AlaraChatUiState.Streaming
     val lastBotId = messages.lastOrNull { !it.isUser }?.id
+    val agentState = chatViewModel.agentState.collectAsState().value
     val markdownCache = remember { mutableStateMapOf<String, MarkdownState>() }
 
     LaunchedEffect(messages.size) {
         listState.animateScrollToItem(messages.size)
+    }
+
+    LaunchedEffect(agentState) {
+        when (agentState) {
+            is AlaraGetAgentState.Loading -> {
+                // show loading in agent
+            }
+
+            is AlaraGetAgentState.Success -> {
+
+            }
+
+            is AlaraGetAgentState.Error -> {
+
+            }
+
+            else -> {
+                //Ignored
+            }
+
+        }
     }
 
     Scaffold(
@@ -148,32 +168,14 @@ fun AlaraChatComposable(
                     }
                 },
                 actions = {
-                    Card(
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = AlaraColors.Chip,
-                        ),
+                    AlaraAgentChip(
+                        selectedModel = selectedModel,
+                        isLoading = agentState is AlaraGetAgentState.Loading,
                         onClick = {
                             chatViewModel.setClickType(AlaraClickType.MODELS)
                             chatViewModel.showSheet()
                         }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(
-                                top = 10.dp,
-                                end = 15.dp,
-                                start = 15.dp,
-                                bottom = 10.dp
-                            )
-                        ) {
-                            AlaraText(
-                                text = selectedModel,
-                                fontSize = 16.sp,
-                            )
-                        }
-                    }
+                    )
                 }
             )
         },
@@ -297,14 +299,15 @@ fun AlaraChatComposable(
                                 .padding(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            uploadOptions.take(3).forEach { option -> // Take first 3 to fit evenly
-                                AlaraUploadBlock(
-                                    icon = option.icon,
-                                    text = option.text,
-                                    onClick = { /* Handle click */ },
-                                    modifier = Modifier.weight(1f) // Each block gets equal weight to fill row
-                                )
-                            }
+                            uploadOptions.take(3)
+                                .forEach { option -> // Take first 3 to fit evenly
+                                    AlaraUploadBlock(
+                                        icon = option.icon,
+                                        text = option.text,
+                                        onClick = { /* Handle click */ },
+                                        modifier = Modifier.weight(1f) // Each block gets equal weight to fill row
+                                    )
+                                }
                         }
                     }
 
@@ -329,12 +332,11 @@ fun AlaraChatComposable(
                     items(models.size) { index ->
                         AlaraModelSelection(
                             cardColor = Color.Transparent, // Transparent to blend with sheet
-                            heading = models[index].heading,
-                            subHeading = models[index].subHeading,
+                            heading = models[index].agentName,
+                            subHeading = "",
                             isSelected = models[index].isSelected,
-                            onClick = { selectedModel ->
+                            onClick = { _ ->
                                 chatViewModel.updateSelection(index)
-                                chatViewModel.setModel(selectedModel)
                                 // Optional: Close sheet on model selection
                                 chatViewModel.hideSheet()
                             }
@@ -347,6 +349,44 @@ fun AlaraChatComposable(
     )
 }
 
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AlaraAgentChip(
+    selectedModel: String,
+    isLoading: Boolean,
+    onClick: () -> Unit = {}
+) {
+    Card(
+        enabled = !isLoading,
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = AlaraColors.Chip,
+        ),
+        onClick = onClick
+    ) {
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(
+                top = 10.dp,
+                end = 15.dp,
+                start = 15.dp,
+                bottom = 10.dp
+            )
+        ) {
+            if (!isLoading) {
+                AlaraText(
+                    text = selectedModel,
+                    fontSize = 16.sp,
+                )
+            } else {
+                LoadingIndicator(modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
 
 @Composable
 fun AlaraUploadBlock(

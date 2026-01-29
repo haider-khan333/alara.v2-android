@@ -96,5 +96,10 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.2.0")
 
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.5.0-alpha13")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.3.0")
+
+
+
 
 }

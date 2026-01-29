@@ -8,11 +8,13 @@ import androidx.compose.material.icons.rounded.CameraEnhance
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai.alarav2.data.models.req.AlaraChatRequest
+import com.ai.alarav2.data.models.ui.AlaraAgentUiModel
 import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.data.models.ui.AlaraModelsUiModel
 import com.ai.alarav2.data.models.ui.AlaraUploadUiModel
 import com.ai.alarav2.di.AlaraTokenManager
 import com.ai.alarav2.repository.chat.AlaraChatRepo
+import com.ai.alarav2.repository.getagent.AlaraGetAgentRepo
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -26,6 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AlaraChatViewModel @Inject constructor(
     private val chatRepo: AlaraChatRepo,
+    private val getAgentRepo: AlaraGetAgentRepo
 ) : ViewModel() {
 
     private val _showSheet = MutableStateFlow(false)
@@ -40,41 +43,23 @@ class AlaraChatViewModel @Inject constructor(
     private val _chatState = MutableStateFlow<AlaraChatUiState>(AlaraChatUiState.Idle)
     val chatState: StateFlow<AlaraChatUiState> = _chatState
 
+    private val _agentState = MutableStateFlow<AlaraGetAgentState>(AlaraGetAgentState.Idle)
+    val agentState: StateFlow<AlaraGetAgentState> = _agentState
+
+
     private var streamingJob: Job? = null
 
-    private val _models = MutableStateFlow(
-        listOf(
-            AlaraModelsUiModel(
-                heading = "AutoGPT",
-                subHeading = "Autonomous agent that breaks goals into sub-tasks using GPT-4.",
-                isSelected = true
-            ),
-            AlaraModelsUiModel(
-                heading = "BabyAGI",
-                subHeading = "Task management agent that prioritizes and executes tasks in a loop.",
-                isSelected = false
-            ),
-            AlaraModelsUiModel(
-                heading = "AgentGPT",
-                subHeading = "Browser-based platform to deploy autonomous agents via web.",
-                isSelected = false
-            ),
-            AlaraModelsUiModel(
-                heading = "Camel",
-                subHeading = "Role-playing framework where agents converse to solve tasks.",
-                isSelected = false
-            ),
-            AlaraModelsUiModel(
-                heading = "SuperAGI",
-                subHeading = "Open-source framework for building and managing useful agents.",
-                isSelected = false
-            )
-        )
-    )
 
-    private val _selectedModel = MutableStateFlow(_models.value.first().heading)
+    private val _selectedModel = MutableStateFlow("")
     val selectedModel: StateFlow<String> = _selectedModel
-    val models: StateFlow<List<AlaraModelsUiModel>> = _models
+
+    private val _models = MutableStateFlow<List<AlaraAgentUiModel>>(emptyList())
+    val models: StateFlow<List<AlaraAgentUiModel>> = _models
+
+
+    init {
+        getAgents()
+    }
 
     private val _uploadOptions = MutableStateFlow(
         listOf(
@@ -98,12 +83,13 @@ class AlaraChatViewModel @Inject constructor(
     }
 
     fun updateSelection(index: Int) {
-        _models.update { currentList ->
-            currentList.mapIndexed { i, model ->
-                model.copy(isSelected = i == index)
-            }
+        val updated = _models.value.mapIndexed { i, model ->
+            model.copy(isSelected = i == index)
         }
+        _models.value = updated
+        _selectedModel.value = updated.getOrNull(index)?.agentName.orEmpty()
     }
+
 
     fun setModel(model: String) {
         _selectedModel.value = model
@@ -238,6 +224,35 @@ class AlaraChatViewModel @Inject constructor(
         _chatState.value = AlaraChatUiState.Error(errorMessage)
         streamingJob?.cancel()
     }
+
+    fun getAgents() {
+        _agentState.value = AlaraGetAgentState.Loading
+        viewModelScope.launch {
+            _agentState.value = getAgentRepo.getAgents()
+
+            if (_agentState.value is AlaraGetAgentState.Success) {
+                val list = (_agentState.value as AlaraGetAgentState.Success).response
+                Log.d("TAG", "getAgents: List=$list")
+
+                if (list.isNotEmpty()) {
+                    val selectedIndex = list.indexOfFirst { it.isSelected }.takeIf { it >= 0 } ?: 0
+                    val updated =
+                        list.mapIndexed { i, m -> m.copy(isSelected = i == selectedIndex) }
+
+                    _models.value = updated
+                    _selectedModel.value = updated[selectedIndex].agentName
+                } else {
+                    Log.d("TAG", "getAgents: empty list")
+                    _models.value = emptyList()
+                    _selectedModel.value = ""
+                }
+            }else if(_agentState.value is AlaraGetAgentState.Error){
+                Log.d("TAG", "getAgents: Error = ${_agentState.value}")
+
+            }
+        }
+    }
+
 
     override fun onCleared() {
         super.onCleared()

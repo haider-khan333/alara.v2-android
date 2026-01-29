@@ -25,11 +25,20 @@ data class AlaraUploadUiModel(
 
 data class AlaraLoginUiModel(
     val email: String,
-    val firstName:String,
-    val lastName:String,
-    val phoneNumber:String,
-    val role:String
+    val firstName: String,
+    val lastName: String,
+    val phoneNumber: String,
+    val role: String
 )
+
+data class AlaraAgentUiModel(
+    val agentId: String,
+    val agentName: String,
+    val agentDescription: String,
+    val agentType: String,
+    val isSelected: Boolean = false
+)
+
 
 
 
