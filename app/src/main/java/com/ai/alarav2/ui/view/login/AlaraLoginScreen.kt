@@ -1,38 +1,25 @@
 package com.ai.alarav2.ui.view.login
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,9 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.alarav2.ui.theme.AlaraButtonColor
 import com.ai.alarav2.ui.theme.AlaraColors
-import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
 import com.ai.alarav2.ui.view.components.AlaraText
 import kotlinx.coroutines.delay
 
@@ -66,135 +50,132 @@ fun AlaraLoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var enabled by remember { mutableStateOf(true) }
-
-
-
+    
     Scaffold(
         containerColor = AlaraColors.Background,
     ) { paddingValues ->
-        Box(
+
+        Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(AlaraColors.Background), // Uses your matte background logic
-            contentAlignment = Alignment.Center
+                .imePadding()
+                .background(AlaraColors.Background),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center, // Centers content in available space
         ) {
-            Column(
+
+            Icon(
+                painter = AlaraColors.AlaraAppIconHorizontal,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(50.dp)
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
+            AlaraTypewriterText(
+                texts = listOf(
+                    "Hello, Creator",
+                    "Welcome Back",
+                    "Spark an Idea",
+                    "Design the UI",
+                    "Generate Code",
+                    "Refine Logic",
+                    "Deploy Build",
+                    "Scale Global",
+                    "Excel Today",
+                    "Let's Build AI"
+                ),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            AlaraText(
+                text = "Enter your credentials to access your account",
+                modifier = Modifier.fillMaxWidth(0.9f),
+                softWrap = true,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AlaraLoginTextField(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                value = email,
+                onValueChange = {
+                    email = it
+                },
+                placeholder = "Email"
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            AlaraLoginTextField(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                value = password,
+                onValueChange = {
+                    password = it
+                },
+                placeholder = "Password",
+                isPassword = true
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                enabled = enabled,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AlaraButtonColor,
+                    contentColor = MaterialTheme.colorScheme.background,
+                    disabledContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                ),
+                onClick = {
+                }
             ) {
-
-                Icon(
-                    painter = AlaraColors.AlaraAppIconHorizontal,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(50.dp)
-                )
-
-                Spacer(modifier = Modifier.height(30.dp))
-                AlaraTypewriterText(
-                    texts = listOf(
-                        "Hello, Creator",
-                        "Welcome Back",
-                        "Spark an Idea",
-                        "Design the UI",
-                        "Generate Code",
-                        "Refine Logic",
-                        "Deploy Build",
-                        "Scale Global",
-                        "Excel Today",
-                        "Let's Build AI"
-                    ),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(15.dp))
-
                 AlaraText(
-                    text = "Enter your credentials to access your account",
-                    modifier = Modifier.fillMaxWidth(0.9f),
-                    softWrap = true,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                AlaraLoginTextField(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    value = email,
-                    onValueChange = {
-                        email = it
-                    },
-                    placeholder = "Email"
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                AlaraLoginTextField(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    value = password,
-                    onValueChange = {
-                        password = it
-                    },
-                    placeholder = "Password",
-                    isPassword = true
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    enabled = enabled,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = AlaraButtonColor,
-                        contentColor = MaterialTheme.colorScheme.background,
-                        disabledContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    ),
-                    onClick = {
-                    }
-                ) {
-                    AlaraText(
-                        text = "Continue",
-                        color = if (enabled) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onBackground.copy(
-                            alpha = 0.3f
-                        )
+                    text = "Continue",
+                    color = if (enabled) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onBackground.copy(
+                        alpha = 0.3f
                     )
-                }
-
-                HorizontalDivider(modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .padding(vertical = 20.dp))
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-
-
-                ) {
-                    AlaraText(
-                        text = "Powered by WAI",
-                        modifier = Modifier.padding(5.dp)
-                    )
-
-                    AlaraText(
-                        text = "Version 1.0.0",
-                        fontSize = 12.sp,
-                    )
-                }
-
+                )
             }
 
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .padding(vertical = 20.dp)
+            )
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+
+
+            ) {
+                AlaraText(
+                    text = "Powered by WAI",
+                    modifier = Modifier.padding(5.dp)
+                )
+
+                AlaraText(
+                    text = "Version 1.0.0",
+                    fontSize = 12.sp,
+                )
+            }
 
         }
+
+
     }
 }
 
