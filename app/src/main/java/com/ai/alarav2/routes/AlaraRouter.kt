@@ -42,7 +42,9 @@ fun AlaraRouter(
         }
 
         composable<AlaraRoutes.Login> {
-            AlaraLoginScreen()
+            AlaraLoginScreen(onClick = {
+                navController.navigate(AlaraRoutes.Chat)
+            })
         }
     }
 

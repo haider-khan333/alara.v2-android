@@ -11,17 +11,14 @@ import com.ai.alarav2.data.models.req.AlaraChatRequest
 import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.data.models.ui.AlaraModelsUiModel
 import com.ai.alarav2.data.models.ui.AlaraUploadUiModel
-import com.ai.alarav2.repository.AlaraChatRepo
+import com.ai.alarav2.repository.chat.AlaraChatRepo
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
-import com.mikepenz.markdown.model.MarkdownState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
-import org.intellij.markdown.parser.MarkdownParser
 import org.json.JSONObject
 import javax.inject.Inject
 

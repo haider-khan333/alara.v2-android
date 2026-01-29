@@ -1,4 +1,4 @@
-package com.ai.alarav2.repository
+package com.ai.alarav2.repository.chat
 
 import android.util.Log
 import com.ai.alarav2.data.models.req.AlaraChatRequest

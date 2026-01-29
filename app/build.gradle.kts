@@ -94,7 +94,7 @@ dependencies {
 
     implementation("com.mikepenz:multiplatform-markdown-renderer-code:0.39.0")
 
-    implementation("com.github.jeziellago:compose-markdown:0.5.8")
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
 
 
 }

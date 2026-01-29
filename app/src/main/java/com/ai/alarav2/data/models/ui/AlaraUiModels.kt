@@ -9,7 +9,9 @@ data class AlaraChatUiModels(
     val id: String = UUID.randomUUID().toString(),
     val message: String,
     val isUser: Boolean,
-    val markdownState: MarkdownState? = null)
+    val markdownState: MarkdownState? = null
+)
+
 data class AlaraModelsUiModel(
     val heading: String,
     val subHeading: String,
@@ -20,4 +22,14 @@ data class AlaraUploadUiModel(
     val text: String,
     val icon: ImageVector
 )
+
+data class AlaraLoginUiModel(
+    val email: String,
+    val firstName:String,
+    val lastName:String,
+    val phoneNumber:String,
+    val role:String
+)
+
+
 
