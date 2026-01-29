@@ -36,21 +36,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+
             val navController = rememberNavController()
             val windowSize = calculateWindowSizeClass(this)
             val drawerViewModel: AlaraDrawerVm = hiltViewModel()
 
-//            var showSplash by remember { mutableStateOf(true) }
             val showSplashScreen = drawerViewModel.showSplashScreen.collectAsState().value
             Crossfade(
-//                targetState = showSplash,
                 targetState = showSplashScreen,
                 label = "SplashTransition",
                 animationSpec = tween(durationMillis = 1000) // Adjust speed (e.g., 700ms)
             ) { isSplash ->
                 if (isSplash) {
                     AlaraSplashScreen {
-//                        showSplash = false
                         drawerViewModel.hideSplashScreen()
                     }
                 } else {
@@ -70,7 +68,9 @@ class MainActivity : ComponentActivity() {
                             AlaraRouter(
                                 navController = navController,
                                 windowWidthSizeClass = windowSize.widthSizeClass,
-                                drawerVm = drawerViewModel
+                                drawerVm = drawerViewModel,
+                                startDestination = drawerViewModel.initDestination()
+
                             )
                         }
                     }

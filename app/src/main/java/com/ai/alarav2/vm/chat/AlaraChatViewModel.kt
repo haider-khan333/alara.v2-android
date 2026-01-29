@@ -11,6 +11,7 @@ import com.ai.alarav2.data.models.req.AlaraChatRequest
 import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.data.models.ui.AlaraModelsUiModel
 import com.ai.alarav2.data.models.ui.AlaraUploadUiModel
+import com.ai.alarav2.di.AlaraTokenManager
 import com.ai.alarav2.repository.chat.AlaraChatRepo
 import com.ai.alarav2.ui.view.chat.components.AlaraClickType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +25,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AlaraChatViewModel @Inject constructor(
-    private val chatRepo: AlaraChatRepo
+    private val chatRepo: AlaraChatRepo,
 ) : ViewModel() {
 
     private val _showSheet = MutableStateFlow(false)
@@ -133,6 +134,7 @@ class AlaraChatViewModel @Inject constructor(
                     is AlaraChatResult.Failure -> {
                         handleError(result.error)
                     }
+
                     is AlaraChatResult.Stream -> {
                         handleStreamingResponse(result)
                     }

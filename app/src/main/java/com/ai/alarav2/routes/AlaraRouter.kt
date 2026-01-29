@@ -16,13 +16,14 @@ import com.ai.alarav2.vm.drawer.AlaraDrawerVm
 fun AlaraRouter(
     navController: NavHostController,
     windowWidthSizeClass: WindowWidthSizeClass,
-    drawerVm: AlaraDrawerVm
+    drawerVm: AlaraDrawerVm,
+    startDestination: AlaraRoutes = AlaraRoutes.Login
 ) {
 
     NavHost(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
-        startDestination = AlaraRoutes.Login,
+        startDestination = startDestination,
 
         ) {
         composable<AlaraRoutes.Chat> {
@@ -43,10 +44,13 @@ fun AlaraRouter(
 
         composable<AlaraRoutes.Login> {
             AlaraLoginScreen(onClick = {
-                navController.navigate(AlaraRoutes.Chat)
+                navController.navigate(route = AlaraRoutes.Chat) {
+                    popUpTo(AlaraRoutes.Login) {
+                        inclusive = true
+                    }
+                }
             })
         }
     }
-
 
 }

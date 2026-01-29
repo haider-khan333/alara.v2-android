@@ -626,9 +626,7 @@ fun AlaraChatScreenPreview() {
         WindowWidthSizeClass.Expanded
     }
 
-    val mockDrawerVm = AlaraDrawerVm()
-    AlaraChatComposable(
-        windowWidthSizeClass = mockSizeClass,
-        drawerVm = mockDrawerVm
-    )
+//    AlaraChatComposable(
+//        windowWidthSizeClass = mockSizeClass,
+//    )
 }
