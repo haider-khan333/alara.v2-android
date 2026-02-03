@@ -7,6 +7,7 @@ import java.util.UUID
 
 data class AlaraChatUiModels(
     val id: String = UUID.randomUUID().toString(),
+    val sessionId: String? = null,
     val message: String,
     val isUser: Boolean,
     val markdownState: MarkdownState? = null

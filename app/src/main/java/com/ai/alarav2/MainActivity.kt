@@ -11,10 +11,6 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,7 +21,7 @@ import com.ai.alarav2.ui.theme.AlaraV2Theme
 import com.ai.alarav2.ui.view.components.drawer.AlaraDrawer
 import com.ai.alarav2.ui.view.components.drawer.AlaraDrawerContainer
 import com.ai.alarav2.ui.view.splashscreen.AlaraSplashScreen
-import com.ai.alarav2.vm.drawer.AlaraDrawerVm
+import com.ai.alarav2.vm.drawer.AlaraDrawerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -39,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
             val windowSize = calculateWindowSizeClass(this)
-            val drawerViewModel: AlaraDrawerVm = hiltViewModel()
+            val drawerViewModel: AlaraDrawerViewModel = hiltViewModel()
 
             val showSplashScreen = drawerViewModel.showSplashScreen.collectAsState().value
             Crossfade(
@@ -61,7 +57,8 @@ class MainActivity : ComponentActivity() {
                                     onItemClick = { route ->
                                         drawerViewModel.closeDrawer() // Close on click
                                         navController.navigate(route)
-                                    }
+                                    },
+                                    drawerVm = drawerViewModel
                                 )
                             }) {
 

@@ -75,7 +75,7 @@ import com.ai.alarav2.ui.view.components.markdown.AlaraMarkdownText
 import com.ai.alarav2.vm.chat.AlaraChatUiState
 import com.ai.alarav2.vm.chat.AlaraChatViewModel
 import com.ai.alarav2.vm.chat.AlaraGetAgentState
-import com.ai.alarav2.vm.drawer.AlaraDrawerVm
+import com.ai.alarav2.vm.drawer.AlaraDrawerViewModel
 import com.mikepenz.markdown.model.MarkdownState
 import com.mikepenz.markdown.model.rememberMarkdownState
 import customOverscroll
@@ -86,7 +86,7 @@ import kotlin.math.roundToInt
 @Composable
 fun AlaraChatComposable(
     windowWidthSizeClass: WindowWidthSizeClass,
-    drawerVm: AlaraDrawerVm
+    drawerVm: AlaraDrawerViewModel
 ) {
     var chatMessage by remember { mutableStateOf("") }
     val listState = rememberLazyListState()

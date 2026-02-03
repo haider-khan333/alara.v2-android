@@ -11,4 +11,7 @@ sealed interface AlaraRoutes {
 
     @Serializable
     data object Login : AlaraRoutes
+
+    @Serializable
+    data object Settings : AlaraRoutes
 }

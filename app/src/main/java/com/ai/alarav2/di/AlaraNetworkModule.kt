@@ -1,6 +1,7 @@
 package com.ai.alarav2.di
 
 import com.ai.alarav2.data.remote.AlaraChatApi
+import com.ai.alarav2.data.remote.AlaraChatHistoryApi
 import com.ai.alarav2.data.remote.AlaraGetAgentApi
 import dagger.Binds
 import dagger.Module
@@ -71,8 +72,13 @@ class AlaraNetworkModule {
 
     @Provides
     @Singleton
+    fun provideChatHistoryApi(@AlaraNetwork retrofit: Retrofit): AlaraChatHistoryApi =
+        retrofit.create(AlaraChatHistoryApi::class.java)
+    @Provides
+    @Singleton
     fun provideAlaraAgentApi(@AlaraNetwork retrofit: Retrofit): AlaraGetAgentApi =
         retrofit.create(AlaraGetAgentApi::class.java)
+
 
 
 }

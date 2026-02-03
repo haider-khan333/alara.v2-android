@@ -1,8 +1,5 @@
 package com.ai.alarav2.ui.view.components.drawer
 
-import android.R
-import android.util.Log
-import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
@@ -27,14 +24,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -58,19 +53,25 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import com.ai.alarav2.data.models.ui.AlaraChatUiModels
 import com.ai.alarav2.ui.theme.AlaraColors
 import com.ai.alarav2.ui.view.chat.components.AlaraIconButton
 import com.ai.alarav2.ui.view.components.AlaraText
-import com.ai.alarav2.vm.drawer.AlaraDrawerVm
+import com.ai.alarav2.vm.chathistory.AlaraChatHistoryState
+import com.ai.alarav2.vm.chathistory.AlaraChatHistoryUiState
+import com.ai.alarav2.vm.drawer.AlaraDrawerViewModel
 
 
 /**
@@ -88,12 +89,15 @@ import com.ai.alarav2.vm.drawer.AlaraDrawerVm
 fun AlaraDrawerContainer(
     modifier: Modifier = Modifier,
     drawerWidth: Dp = 320.dp,
-    viewModel: AlaraDrawerVm,
+    viewModel: AlaraDrawerViewModel,
     drawerContent: @Composable () -> Unit,
     content: @Composable () -> Unit
 ) {
 
+
     val isDrawerOpen = viewModel.drawerState.collectAsState().value
+
+
     BackHandler(enabled = isDrawerOpen) {
         viewModel.closeDrawer()
 
@@ -181,15 +185,37 @@ fun AlaraDrawerContainer(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AlaraDrawer(
     selectedItem: AlaraRoutes,
     onItemClick: (AlaraRoutes) -> Unit,
-    onNewChatClick: () -> Unit = {}
+    onNewChatClick: () -> Unit = {},
+    drawerVm: AlaraDrawerViewModel
 ) {
+    val state = drawerVm.state.collectAsState().value
     val drawerBg = AlaraColors.Background
     val contentColor = AlaraColors.MainContent
     val searchBarBg = AlaraColors.Input
+    val isLoading = remember { mutableStateOf(false) }
+    val list = remember { mutableStateListOf<AlaraChatUiModels>() }
+
+    when (state) {
+        is AlaraChatHistoryUiState.Loading -> {
+            isLoading.value = true
+        }
+
+        is AlaraChatHistoryUiState.Success -> {
+            isLoading.value = false
+            list.clear()
+            list.addAll(state.response)
+        }
+
+        else -> {
+            isLoading.value = false
+            list.clear()
+        }
+    }
 
     // State for the search field
     var searchText by remember { mutableStateOf("") }
@@ -259,26 +285,34 @@ fun AlaraDrawer(
                 modifier = Modifier.weight(1f), // KEY CHANGE: Fills available space
                 contentPadding = PaddingValues(horizontal = 12.dp)
             ) {
-                item {
-                    AlaraText(
-                        text = "Recent",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = contentColor.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
-                    )
+                if (isLoading.value) {
+                    item {
+                        LoadingIndicator()
+                    }
+                } else {
+                    item {
+                        AlaraText(
+                            text = "Recent",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = contentColor.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                        )
+                    }
+
+                    items(
+                        items = list,
+                        key = { it.id }) { msg -> // Increased count to test scrolling
+                        DrawerChatItem(
+                            text = msg.message,
+                            isSelected = false,
+                            onClick = { /* Navigate */ }
+                        )
+                    }
                 }
 
-                items(5) { index -> // Increased count to test scrolling
-                    DrawerChatItem(
-                        text = "Project Alara Discussion $index",
-                        isSelected = index == 0,
-                        onClick = { /* Navigate */ }
-                    )
-                }
             }
 
-            // --- BOTTOM FOOTER ---
             Column(modifier = Modifier.fillMaxWidth()) {
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 12.dp),
@@ -290,7 +324,10 @@ fun AlaraDrawer(
                         .fillMaxWidth()
                         .padding(12.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { /* Open Settings */ }
+                        .clickable {
+                            onItemClick(AlaraRoutes.Settings)
+
+                        }
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

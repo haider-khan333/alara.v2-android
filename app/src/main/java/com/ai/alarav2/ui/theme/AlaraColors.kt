@@ -69,6 +69,13 @@ object AlaraColors {
         else
             MaterialTheme.colorScheme.background
 
+    val SettingsCardColors: Color
+        @Composable
+        get() = if (isSystemInDarkTheme())
+            Color.DarkGray.copy(alpha = 0.4f)
+        else
+            Color.LightGray.copy(alpha = 0.2f)
+
     val AlaraAppIcon: Painter
         @Composable
         get() = painterResource(R.drawable.logo_app_black)

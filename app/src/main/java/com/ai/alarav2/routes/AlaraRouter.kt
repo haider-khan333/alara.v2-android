@@ -10,13 +10,14 @@ import androidx.navigation.compose.composable
 import com.ai.alarav2.ui.view.chat.AlaraChatComposable
 import com.ai.alarav2.ui.view.dashboard.AlaraDashboardComposable
 import com.ai.alarav2.ui.view.login.AlaraLoginScreen
-import com.ai.alarav2.vm.drawer.AlaraDrawerVm
+import com.ai.alarav2.ui.view.settings.AlaraSettingsScreen
+import com.ai.alarav2.vm.drawer.AlaraDrawerViewModel
 
 @Composable
 fun AlaraRouter(
     navController: NavHostController,
     windowWidthSizeClass: WindowWidthSizeClass,
-    drawerVm: AlaraDrawerVm,
+    drawerVm: AlaraDrawerViewModel,
     startDestination: AlaraRoutes = AlaraRoutes.Login
 ) {
 
@@ -31,6 +32,18 @@ fun AlaraRouter(
                 windowWidthSizeClass = windowWidthSizeClass,
                 drawerVm = drawerVm
             )
+        }
+
+        composable<AlaraRoutes.Settings> {
+            AlaraSettingsScreen(
+                drawerVm = drawerVm,
+                onLogout = {
+                    navController.navigate(AlaraRoutes.Login) {
+                        popUpTo(0) {
+                            inclusive = true
+                        }
+                    }
+                })
         }
 
         composable<AlaraRoutes.Dashboard> {
